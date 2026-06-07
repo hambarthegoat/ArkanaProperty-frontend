@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-primary: #1A3C5E;
+  --color-accent: #C9A84C;
+  --color-emerald-custom: #10B981;
+  
+  --color-surface-soft: #F8FAFC;
+  --color-border-subtle: #E2E8F0;
+}
+
+@layer base {
+  body {
+    @apply bg-surface-soft text-primary font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  .btn-gold-outline {
+    @apply border-2 border-accent text-accent px-6 py-2 rounded-full font-semibold transition-all hover:bg-accent hover:text-white active:scale-95;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold transition-all hover:bg-primary/90 active:scale-95 shadow-lg shadow-primary/20;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+}
