@@ -1,44 +1,8 @@
 @extends('layouts.main')
 
-@section('title', 'Design Arkanaproperty Web App')
+@section('title', 'ArkanaProperty - Hunian Impian di Probolinggo')
 
 @php
-    $properties = [
-        [
-            'id' => 1,
-            'name' => 'Arkanaproperty Residence - Tipe 36/60',
-            'price' => '162.000.000',
-            'dp' => '5.000.000',
-            'installment' => '900rb-an',
-            'type' => 'Subsidi',
-            'location' => 'Kec. Mayangan, Probolinggo',
-            'specs' => '2 KT, 1 KM, Dapur, Carport',
-            'image' => 'https://images.unsplash.com/photo-1721815693498-cc28507c0ba2?q=80&w=2070',
-        ],
-        [
-            'id' => 2,
-            'name' => 'Arkana Premium Cluster',
-            'price' => '450.000.000',
-            'dp' => '45.000.000',
-            'installment' => '3jt-an',
-            'type' => 'Cluster Premium',
-            'location' => 'Kec. Kanigaran, Probolinggo',
-            'specs' => '3 KT, 2 KM, Private Garden, Smart Home',
-            'image' => 'https://images.unsplash.com/photo-1628744876497-eb30460be9f6?q=80&w=2070',
-        ],
-        [
-            'id' => 3,
-            'name' => 'Scandinavian Hill - Phase 2',
-            'price' => '575.000.000',
-            'dp' => '57.000.000',
-            'installment' => '4jt-an',
-            'type' => 'Cluster Premium',
-            'location' => 'Kec. Wonoasih, Probolinggo',
-            'specs' => '3 KT, 2 KM, Attic Room, Balcony',
-            'image' => 'https://images.unsplash.com/photo-1660361338485-c926a27d4eb8?q=80&w=2070',
-        ],
-    ];
-
     $whyUs = [
         ['title' => 'Legalitas Terjamin', 'desc' => 'Seluruh unit memiliki sertifikat (SHM) dan perizinan IMB/PBG yang lengkap dan aman.', 'icon' => 'shield-check'],
         ['title' => 'Lokasi Strategis', 'desc' => 'Akses mudah menuju pusat kota, sekolah, rumah sakit, dan fasilitas publik lainnya.', 'icon' => 'map-pin'],
@@ -78,9 +42,9 @@
                     <a href="#katalog" class="btn-primary flex items-center gap-2">
                         Lihat Katalog Properti <i data-lucide="arrow-right" class="size-5"></i>
                     </a>
-                    <button class="btn-gold-outline !text-white border-white hover:bg-white hover:text-primary">
+                    <a href="#katalog" class="btn-gold-outline !text-white border-white hover:bg-white hover:text-primary">
                         Konsultasi Gratis
-                    </button>
+                    </a>
                 </div>
 
                 <div class="flex gap-8 border-t border-white/10 pt-4">
@@ -100,61 +64,66 @@
 
     {{-- Filter Widget --}}
     <section class="relative -mt-12 z-10 px-4">
-        <div class="max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl p-8 lg:p-10 border border-border-subtle">
+        <form method="GET" action="{{ route('home') }}#katalog" class="max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl p-8 lg:p-10 border border-border-subtle" data-filter-form>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
+                    <label for="filter-lokasi" class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
                         <i data-lucide="map-pin" class="size-3.5 text-accent"></i> Lokasi
                     </label>
-                    <select class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-accent outline-none">
-                        <option>Seluruh Probolinggo</option>
-                        <option>Kec. Mayangan</option>
-                        <option>Kec. Kanigaran</option>
-                        <option>Kec. Wonoasih</option>
+                    <select id="filter-lokasi" name="lokasi" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-accent outline-none">
+                        <option value="">Seluruh Probolinggo</option>
+                        @foreach ($lokasiOptions as $lokasi)
+                            <option value="{{ $lokasi }}" @selected(($filters['lokasi'] ?? '') === $lokasi)>{{ $lokasi }}</option>
+                        @endforeach
                     </select>
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
-                        <i data-lucide="wallet" class="size-3.5 text-accent"></i> Kisaran Budget
+                        <i data-lucide="wallet" class="size-3.5 text-accent"></i> Kisaran Budget (Rp)
                     </label>
                     <div class="flex items-center gap-2">
-                        <input type="number" placeholder="Min" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold text-sm outline-none" />
+                        <input type="number" name="min_budget" min="0" step="1000000" value="{{ $filters['min_budget'] ?? '' }}" placeholder="Min" aria-label="Budget minimum" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold text-sm outline-none" />
                         <span class="text-primary/20">-</span>
-                        <input type="number" placeholder="Max" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold text-sm outline-none" />
+                        <input type="number" name="max_budget" min="0" step="1000000" value="{{ $filters['max_budget'] ?? '' }}" placeholder="Max" aria-label="Budget maksimum" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold text-sm outline-none" />
                     </div>
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
-                        <i data-lucide="clock" class="size-3.5 text-accent"></i> Lama Angsuran
+                    <label for="filter-cicilan" class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="clock" class="size-3.5 text-accent"></i> Cicilan / Bulan
                     </label>
-                    <select class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-accent outline-none">
-                        <option>Pilih Tenor</option>
-                        <option>5 Tahun</option>
-                        <option>10 Tahun</option>
-                        <option>15 Tahun</option>
-                        <option>20 Tahun</option>
+                    <select id="filter-cicilan" name="max_cicilan" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-accent outline-none">
+                        <option value="">Semua Cicilan</option>
+                        @foreach ($cicilanOptions as $value => $label)
+                            <option value="{{ $value }}" @selected((string) ($filters['max_cicilan'] ?? '') === (string) $value)>{{ $label }}</option>
+                        @endforeach
                     </select>
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
+                    <label for="filter-jenis" class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
                         <i data-lucide="home" class="size-3.5 text-accent"></i> Jenis Rumah
                     </label>
                     <div class="flex gap-2">
-                        <select class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-accent outline-none" data-filter-type>
-                            <option>Semua Jenis</option>
-                            <option>Subsidi</option>
-                            <option>Cluster Premium</option>
+                        <select id="filter-jenis" name="jenis_rumah" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-accent outline-none">
+                            <option value="">Semua Jenis</option>
+                            @foreach ($jenisOptions as $jenis)
+                                <option value="{{ $jenis['value'] }}" @selected(($filters['jenis_rumah'] ?? '') === $jenis['value'])>{{ $jenis['label'] }}</option>
+                            @endforeach
                         </select>
-                        <button class="bg-primary text-white p-3 rounded-xl hover:bg-accent transition-colors shrink-0" data-search-btn>
+                        <button type="submit" class="bg-primary text-white p-3 rounded-xl hover:bg-accent transition-colors shrink-0" aria-label="Cari properti">
                             <i data-lucide="search" class="size-5"></i>
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+            @if (array_filter($filters))
+                <div class="mt-6 text-right">
+                    <a href="{{ route('home') }}#katalog" class="text-xs font-bold text-primary/50 hover:text-accent uppercase tracking-widest">Reset Filter</a>
+                </div>
+            @endif
+        </form>
     </section>
 
     {{-- Property List --}}
@@ -164,30 +133,27 @@
                 <span class="text-accent text-xs font-black uppercase tracking-[0.3em] mb-4 inline-block">Katalog Properti</span>
                 <h2 class="text-4xl md:text-5xl font-black text-primary leading-tight">Temukan Unit Pilihan Untuk Keluarga Anda.</h2>
             </div>
-            <div class="flex gap-4 mb-2">
-                <button class="p-4 bg-white border border-border-subtle rounded-2xl text-primary hover:border-accent transition-all shadow-sm">
-                    <i data-lucide="arrow-right" class="size-5 rotate-180"></i>
-                </button>
-                <button class="p-4 bg-white border border-border-subtle rounded-2xl text-primary hover:border-accent transition-all shadow-sm">
-                    <i data-lucide="arrow-right" class="size-5"></i>
-                </button>
+            <p class="text-primary/50 font-semibold mb-2">{{ count($properties) }} tipe rumah ditemukan</p>
+        </div>
+
+        @if ($catalogError)
+            <div class="mb-8 p-4 rounded-2xl bg-orange-50 border border-orange-100 text-orange-700 text-sm font-semibold" role="alert">
+                Katalog belum bisa dimuat: {{ $catalogError }}
             </div>
-        </div>
+        @endif
 
-        <div class="py-20 flex-col items-center justify-center space-y-4 hidden" data-searching>
-            <div class="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p class="font-bold text-primary/40 uppercase tracking-widest text-xs text-center">Mencari Properti Terbaik...</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" data-property-grid>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 {{ count($properties) ? '' : 'hidden' }}" data-property-grid>
             @foreach ($properties as $property)
-                <div class="bg-white rounded-[40px] overflow-hidden border border-border-subtle shadow-sm group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 flex flex-col h-full" data-property-card data-type="{{ $property['type'] }}">
+                <div class="bg-white rounded-[40px] overflow-hidden border border-border-subtle shadow-sm group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 flex flex-col h-full" data-property-card>
                     <div class="relative h-72 overflow-hidden shrink-0">
                         <img src="{{ $property['image'] }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="{{ $property['name'] }}" />
                         <div class="absolute top-6 left-6">
-                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-white {{ $property['type'] === 'Subsidi' ? 'bg-blue-600' : 'bg-accent' }}">
+                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-white {{ $property['jenis'] === 'subsidi' ? 'bg-blue-600' : 'bg-accent' }}">
                                 {{ $property['type'] }}
                             </span>
+                            @if ($property['pre_launch'])
+                                <span class="ml-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-primary">Pre-Launch</span>
+                            @endif
                         </div>
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
@@ -212,7 +178,7 @@
                         </div>
 
                         <div class="mt-auto flex items-center justify-between gap-4">
-                            <button class="flex-grow btn-primary !py-4 text-xs" data-open-property='@json($property)'>
+                            <button type="button" class="flex-grow btn-primary !py-4 text-xs" data-open-property='@json($property)'>
                                 Detail Unit
                             </button>
                             <a href="{{ route('property.show', $property['id']) }}" class="p-4 bg-surface-soft text-primary rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm">
@@ -224,16 +190,18 @@
             @endforeach
         </div>
 
-        <div class="py-20 text-center bg-white rounded-[40px] border border-border-subtle hidden" data-empty-state>
+        <div class="py-20 text-center bg-white rounded-[40px] border border-border-subtle {{ count($properties) || $catalogError ? 'hidden' : '' }}" data-empty-state>
             <h3 class="text-xl font-black text-primary mb-2">Properti Tidak Ditemukan</h3>
             <p class="text-primary/60">Coba ubah kriteria pencarian atau pilih jenis rumah yang berbeda.</p>
         </div>
 
-        <div class="mt-16 text-center">
-            <button class="btn-gold-outline inline-flex items-center gap-3">
-                Lihat Semua Unit Properti <i data-lucide="arrow-right" class="size-[18px]"></i>
-            </button>
-        </div>
+        @if (array_filter($filters))
+            <div class="mt-16 text-center">
+                <a href="{{ route('home') }}#katalog" class="btn-gold-outline inline-flex items-center gap-3">
+                    Lihat Semua Unit Properti <i data-lucide="arrow-right" class="size-[18px]"></i>
+                </a>
+            </div>
+        @endif
     </section>
 
     {{-- Why Choose Us --}}
@@ -312,7 +280,9 @@
     </section>
 
     {{-- Property Detail Modal & Lead Form --}}
-    <div class="fixed inset-0 z-[100] items-center justify-center p-4 hidden" data-property-modal>
+    <div class="fixed inset-0 z-[100] items-center justify-center p-4 hidden" data-property-modal
+         data-reopen='@json(old('id_tipe') ? collect($properties)->firstWhere('id', (int) old('id_tipe')) : null)'
+         data-submitted='@json($submittedProperty)'>
         <div class="absolute inset-0 bg-primary/40 backdrop-blur-md" data-modal-backdrop></div>
 
         <div class="relative w-full max-w-5xl bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col lg:flex-row max-h-[90vh]">
@@ -332,8 +302,8 @@
 
                     <div class="grid grid-cols-2 gap-8 mb-10">
                         <div class="p-6 bg-surface-soft rounded-2xl">
-                            <p class="text-xs font-bold text-primary/40 uppercase tracking-widest mb-1">Booking Fee</p>
-                            <p class="text-xl font-black text-primary">Rp 1.000.000</p>
+                            <p class="text-xs font-bold text-primary/40 uppercase tracking-widest mb-1">Harga</p>
+                            <p class="text-xl font-black text-primary">Rp <span data-modal-price></span></p>
                         </div>
                         <div class="p-6 bg-surface-soft rounded-2xl">
                             <p class="text-xs font-bold text-primary/40 uppercase tracking-widest mb-1">Uang Muka (DP)</p>
@@ -342,14 +312,10 @@
                     </div>
 
                     <h4 class="font-black text-primary mb-4">Spesifikasi Bangunan</h4>
-                    <ul class="grid grid-cols-2 gap-y-3 gap-x-6 text-primary/70 mb-10">
-                        <li class="flex items-center gap-2 border-b border-border-subtle pb-2">✓ Pondasi Batu Kali</li>
-                        <li class="flex items-center gap-2 border-b border-border-subtle pb-2">✓ Dinding Bata Ringan</li>
-                        <li class="flex items-center gap-2 border-b border-border-subtle pb-2">✓ Rangka Atap Galvalum</li>
-                        <li class="flex items-center gap-2 border-b border-border-subtle pb-2">✓ Lantai Granit 60x60</li>
-                        <li class="flex items-center gap-2 border-b border-border-subtle pb-2">✓ Listrik 1300 Watt</li>
-                        <li class="flex items-center gap-2 border-b border-border-subtle pb-2">✓ Air Bersih PDAM</li>
-                    </ul>
+                    <p class="text-primary/70 mb-6" data-modal-specs></p>
+                    <a href="#" class="inline-flex items-center gap-2 text-accent font-bold text-sm hover:underline mb-10" data-modal-detail-link>
+                        Lihat detail & ketersediaan unit <i data-lucide="arrow-right" class="size-4"></i>
+                    </a>
                 </div>
             </div>
 
@@ -360,26 +326,45 @@
                         <p class="text-primary/60 text-sm">Isi data di bawah ini, Marketing kami akan segera menghubungi Anda melalui WhatsApp.</p>
                     </div>
 
-                    <form class="space-y-4" data-lead-form>
+                    <form method="POST" action="{{ route('leads.store') }}" enctype="multipart/form-data" class="space-y-4" data-lead-form>
+                        @csrf
+                        <input type="hidden" name="id_tipe" value="{{ old('id_tipe') }}" data-lead-tipe />
+                        @if ($errors->any())
+                            <div class="p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs font-semibold" role="alert">
+                                @foreach ($errors->all() as $message)
+                                    <p>{{ $message }}</p>
+                                @endforeach
+                            </div>
+                        @endif
+                        @if (session('error'))
+                            <div class="p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs font-semibold" role="alert">{{ session('error') }}</div>
+                        @endif
+
                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Nama Lengkap</label>
+                            <label for="lead-nama" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Nama Lengkap</label>
                             <div class="relative">
                                 <i data-lucide="user" class="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-primary/30"></i>
-                                <input required type="text" class="w-full bg-white border border-border-subtle rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-accent outline-none font-medium" placeholder="Contoh: Ahmad Rizky" />
+                                <input id="lead-nama" name="nama_calon" value="{{ old('nama_calon') }}" required type="text" class="w-full bg-white border border-border-subtle rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-accent outline-none font-medium" placeholder="Contoh: Ahmad Rizky" />
                             </div>
                         </div>
 
                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Nomor WhatsApp</label>
+                            <label for="lead-telp" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Nomor WhatsApp</label>
                             <div class="relative">
                                 <i data-lucide="phone" class="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-primary/30"></i>
-                                <input required type="tel" class="w-full bg-white border border-border-subtle rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-accent outline-none font-medium" placeholder="0812xxxxxx" />
+                                <input id="lead-telp" name="no_telp" value="{{ old('no_telp') }}" required type="tel" class="w-full bg-white border border-border-subtle rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-accent outline-none font-medium" placeholder="0812xxxxxx" />
                             </div>
                         </div>
 
                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Pesan Tambahan</label>
-                            <textarea class="w-full bg-white border border-border-subtle rounded-xl py-3 px-4 focus:ring-2 focus:ring-accent outline-none font-medium min-h-[100px]" placeholder="Ingin tanya jadwal survey lokasi..."></textarea>
+                            <label for="lead-pesan" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Pesan Tambahan</label>
+                            <textarea id="lead-pesan" name="pesan" class="w-full bg-white border border-border-subtle rounded-xl py-3 px-4 focus:ring-2 focus:ring-accent outline-none font-medium min-h-[80px]" placeholder="Ingin tanya jadwal survey lokasi...">{{ old('pesan') }}</textarea>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label for="lead-ktp" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Foto KTP (opsional)</label>
+                            <input id="lead-ktp" name="file_ktp" type="file" accept=".jpg,.jpeg,.png,.pdf" class="w-full bg-white border border-border-subtle rounded-xl py-2 px-4 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-surface-soft file:px-3 file:py-1 file:font-bold file:text-primary" />
+                            <p class="text-[10px] text-primary/40 px-2">JPG/PNG/PDF maks 5MB. Mempercepat verifikasi oleh tim kami.</p>
                         </div>
 
                         <button type="submit" class="w-full btn-primary py-4 flex items-center justify-center gap-2">
@@ -400,7 +385,7 @@
                         <h3 class="text-2xl font-black text-primary mb-2">Terima Kasih!</h3>
                         <p class="text-primary/60">Data Anda telah kami terima. Marketing kami akan segera menghubungi Anda dalam waktu maksimal 1x24 jam.</p>
                     </div>
-                    <button class="btn-gold-outline" data-lead-reset>
+                    <button type="button" class="btn-gold-outline" data-lead-reset>
                         Kembali ke Beranda
                     </button>
                 </div>
@@ -414,62 +399,35 @@
         var root = document.querySelector('[data-landing]');
         if (!root) return;
 
-        // Filter + search
-        var filterSelect = root.querySelector('[data-filter-type]');
-        var searchBtn = root.querySelector('[data-search-btn]');
-        var grid = root.querySelector('[data-property-grid]');
-        var searching = root.querySelector('[data-searching]');
-        var emptyState = root.querySelector('[data-empty-state]');
-        var cards = Array.prototype.slice.call(root.querySelectorAll('[data-property-card]'));
-
-        function applyFilter() {
-            var type = filterSelect.value;
-            var visible = 0;
-            cards.forEach(function (card) {
-                var match = type === 'Semua Jenis' || card.getAttribute('data-type') === type;
-                card.classList.toggle('hidden', !match);
-                if (match) visible++;
-            });
-            grid.classList.toggle('hidden', visible === 0);
-            emptyState.classList.toggle('hidden', visible !== 0);
-        }
-
-        filterSelect.addEventListener('change', applyFilter);
-
-        searchBtn.addEventListener('click', function () {
-            grid.classList.add('hidden');
-            emptyState.classList.add('hidden');
-            searching.classList.remove('hidden');
-            searching.classList.add('flex');
-            setTimeout(function () {
-                searching.classList.add('hidden');
-                searching.classList.remove('flex');
-                applyFilter();
-            }, 800);
-        });
-
-        // Property modal
         var modal = root.querySelector('[data-property-modal]');
-        var modalImage = modal.querySelector('[data-modal-image]');
-        var modalType = modal.querySelector('[data-modal-type]');
-        var modalName = modal.querySelector('[data-modal-name]');
-        var modalDp = modal.querySelector('[data-modal-dp]');
         var leadFormWrapper = modal.querySelector('[data-lead-form-wrapper]');
         var leadSuccess = modal.querySelector('[data-lead-success]');
         var leadForm = modal.querySelector('[data-lead-form]');
 
-        function openModal(property) {
-            modalImage.src = property.image;
-            modalImage.alt = property.name;
-            modalType.textContent = property.type;
-            modalName.textContent = property.name;
-            modalDp.textContent = property.dp;
-            leadFormWrapper.classList.remove('hidden');
-            leadSuccess.classList.add('hidden');
-            leadSuccess.classList.remove('flex');
-            leadForm.reset();
+        function fill(property) {
+            modal.querySelector('[data-modal-image]').src = property.image;
+            modal.querySelector('[data-modal-image]').alt = property.name;
+            modal.querySelector('[data-modal-type]').textContent = property.type;
+            modal.querySelector('[data-modal-name]').textContent = property.name;
+            modal.querySelector('[data-modal-dp]').textContent = property.dp;
+            modal.querySelector('[data-modal-price]').textContent = property.price;
+            modal.querySelector('[data-modal-specs]').textContent = property.specs || '-';
+            modal.querySelector('[data-modal-detail-link]').href = '{{ url('property') }}/' + property.id;
+            modal.querySelector('[data-lead-tipe]').value = property.id;
+        }
+
+        function show(success) {
+            leadFormWrapper.classList.toggle('hidden', success);
+            leadSuccess.classList.toggle('hidden', !success);
+            leadSuccess.classList.toggle('flex', success);
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+        }
+
+        function openModal(property) {
+            leadForm.reset();
+            fill(property);
+            show(false);
         }
 
         function closeModal() {
@@ -485,15 +443,13 @@
 
         modal.querySelector('[data-modal-close]').addEventListener('click', closeModal);
         modal.querySelector('[data-modal-backdrop]').addEventListener('click', closeModal);
-
-        leadForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            leadFormWrapper.classList.add('hidden');
-            leadSuccess.classList.remove('hidden');
-            leadSuccess.classList.add('flex');
-        });
-
         modal.querySelector('[data-lead-reset]').addEventListener('click', closeModal);
+
+        // Re-open after a redirect: with errors (keep old input) or on success.
+        var reopen = JSON.parse(modal.getAttribute('data-reopen') || 'null');
+        var submitted = JSON.parse(modal.getAttribute('data-submitted') || 'null');
+        if (reopen) { fill(reopen); show(false); }
+        else if (submitted) { fill(submitted); show(true); }
     })();
 </script>
 @endsection
