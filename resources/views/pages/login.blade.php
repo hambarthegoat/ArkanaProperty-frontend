@@ -4,9 +4,9 @@
 
 @php
     $roles = [
-        ['id' => 'admin', 'label' => 'Panel Admin', 'path' => route('admin.dashboard'), 'description' => 'Kelola data, leads & marketing'],
-        ['id' => 'marketing', 'label' => 'Dashboard Marketing', 'path' => route('marketing.dashboard'), 'description' => 'Kelola leads & laporan harian'],
-        ['id' => 'user', 'label' => 'Portal Penghuni', 'path' => route('portal.dashboard'), 'description' => 'Pantau progres unit Anda'],
+        ['icon' => 'shield-check', 'label' => 'Admin', 'description' => 'Kelola data, leads & marketing'],
+        ['icon' => 'briefcase', 'label' => 'Marketing', 'description' => 'Kelola leads & laporan harian'],
+        ['icon' => 'home', 'label' => 'Konsumen', 'description' => 'Username = nomor HP terdaftar'],
     ];
 @endphp
 
@@ -19,26 +19,61 @@
                 <h1 class="text-4xl font-black text-primary mb-2">
                     Arkana<span class="text-accent">Property</span>
                 </h1>
-                <p class="text-primary/60">Selamat datang kembali. Silakan pilih akses masuk Anda untuk melanjutkan.</p>
+                <p class="text-primary/60">Selamat datang kembali. Masuk dengan akun Anda untuk melanjutkan.</p>
             </div>
 
-            <div class="space-y-4">
+            @if (session('error'))
+                <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-semibold" role="alert">{{ session('error') }}</div>
+            @endif
+
+            <form method="POST" action="{{ route('login.attempt') }}" class="space-y-5" data-login-form>
+                @csrf
+                <div class="space-y-1">
+                    <label for="username" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Username</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-primary/30"></i>
+                        <input id="username" name="username" type="text" value="{{ old('username') }}" required autofocus autocomplete="username"
+                               class="w-full bg-white border {{ $errors->has('username') ? 'border-red-300' : 'border-border-subtle' }} rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-accent outline-none font-medium"
+                               placeholder="Username atau nomor HP" />
+                    </div>
+                    @error('username')
+                        <p class="text-xs text-red-500 font-semibold px-2">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="space-y-1">
+                    <label for="password" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Password</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-primary/30"></i>
+                        <input id="password" name="password" type="password" required autocomplete="current-password"
+                               class="w-full bg-white border {{ $errors->has('password') ? 'border-red-300' : 'border-border-subtle' }} rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-accent outline-none font-medium"
+                               placeholder="••••••••" />
+                    </div>
+                    @error('password')
+                        <p class="text-xs text-red-500 font-semibold px-2">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <button type="submit" class="w-full btn-primary py-4 flex items-center justify-center gap-2">
+                    Masuk <i data-lucide="arrow-right" class="size-5"></i>
+                </button>
+            </form>
+
+            <div class="mt-10 grid grid-cols-3 gap-3">
                 @foreach ($roles as $role)
-                    <a href="{{ $role['path'] }}" class="group w-full flex items-center justify-between p-6 bg-white border border-border-subtle rounded-2xl hover:border-accent hover:shadow-xl hover:shadow-accent/5 transition-all text-left">
-                        <div>
-                            <h3 class="font-bold text-lg text-primary group-hover:text-accent transition-colors">{{ $role['label'] }}</h3>
-                            <p class="text-sm text-primary/60">{{ $role['description'] }}</p>
-                        </div>
-                        <div class="w-10 h-10 rounded-full bg-surface-soft flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all">
-                            <i data-lucide="arrow-right" class="size-5"></i>
-                        </div>
-                    </a>
+                    <div class="p-4 bg-white border border-border-subtle rounded-2xl text-center">
+                        <i data-lucide="{{ $role['icon'] }}" class="size-5 text-accent mx-auto mb-2"></i>
+                        <p class="font-bold text-xs text-primary">{{ $role['label'] }}</p>
+                        <p class="text-[10px] text-primary/50 leading-tight mt-1">{{ $role['description'] }}</p>
+                    </div>
                 @endforeach
             </div>
 
             <div class="mt-12 pt-8 border-t border-border-subtle text-center">
                 <p class="text-sm text-primary/40">
-                    Butuh bantuan akses? Hubungi Admin IT Kami
+                    Admin juga bisa mengelola data lewat
+                    <a href="{{ config('services.arkana_api.admin_panel_url') }}" class="font-bold text-accent hover:underline">Admin Panel</a>.
+                    Butuh bantuan akses? Hubungi Admin IT kami.
                 </p>
             </div>
         </div>
