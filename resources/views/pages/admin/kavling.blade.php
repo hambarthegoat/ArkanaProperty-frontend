@@ -1,54 +1,15 @@
-@extends('layouts.dashboard')
+@extends('layouts.dashboard', ['role' => 'admin'])
 
-@php
-    $role = 'admin';
-@endphp
-@section('title', 'Design Arkanaproperty Web App')
-
-@php
-    $projects = ['Arkana Residence Mayangan', 'Arkana Premium Kanigaran', 'Scandinavian Hill Phase 2'];
-
-    $blocks = [
-        'Arkana Residence Mayangan' => ['Blok A', 'Blok B', 'Blok C', 'Blok D'],
-        'Arkana Premium Kanigaran' => ['Blok Premium 1', 'Blok Premium 2'],
-        'Scandinavian Hill Phase 2' => ['Blok Scandi A', 'Blok Scandi B'],
-    ];
-
-    $houseTypes = [
-        'Arkana Residence Mayangan' => ['Tipe 36/60', 'Tipe 45/84'],
-        'Arkana Premium Kanigaran' => ['Tipe 60/100', 'Tipe 72/120'],
-        'Scandinavian Hill Phase 2' => ['Tipe Nordic 50', 'Tipe Nordic 70'],
-    ];
-
-    $kavlingData = [
-        ['id' => 'A-01', 'project' => 'Arkana Residence Mayangan', 'block' => 'Blok A', 'type' => 'Tipe 36/60', 'price' => '162jt', 'status' => 'Sold', 'customer' => 'Ahmad Rizky'],
-        ['id' => 'A-02', 'project' => 'Arkana Residence Mayangan', 'block' => 'Blok A', 'type' => 'Tipe 36/60', 'price' => '162jt', 'status' => 'Available', 'customer' => null],
-        ['id' => 'A-03', 'project' => 'Arkana Residence Mayangan', 'block' => 'Blok A', 'type' => 'Tipe 36/60', 'price' => '162jt', 'status' => 'Booking', 'customer' => 'Siti Aminah'],
-        ['id' => 'A-04', 'project' => 'Arkana Residence Mayangan', 'block' => 'Blok A', 'type' => 'Tipe 36/60', 'price' => '162jt', 'status' => 'Available', 'customer' => null],
-        ['id' => 'A-05', 'project' => 'Arkana Residence Mayangan', 'block' => 'Blok A', 'type' => 'Tipe 45/84', 'price' => '245jt', 'status' => 'Sold', 'customer' => 'Budi S.'],
-        ['id' => 'A-06', 'project' => 'Arkana Residence Mayangan', 'block' => 'Blok A', 'type' => 'Tipe 45/84', 'price' => '245jt', 'status' => 'Available', 'customer' => null],
-        ['id' => 'B-01', 'project' => 'Arkana Residence Mayangan', 'block' => 'Blok B', 'type' => 'Tipe 36/60', 'price' => '162jt', 'status' => 'Available', 'customer' => null],
-        ['id' => 'B-02', 'project' => 'Arkana Residence Mayangan', 'block' => 'Blok B', 'type' => 'Tipe 36/60', 'price' => '162jt', 'status' => 'Booking', 'customer' => 'Rani M.'],
-        ['id' => 'P1-01', 'project' => 'Arkana Premium Kanigaran', 'block' => 'Blok Premium 1', 'type' => 'Tipe 60/100', 'price' => '450jt', 'status' => 'Available', 'customer' => null],
-        ['id' => 'P1-02', 'project' => 'Arkana Premium Kanigaran', 'block' => 'Blok Premium 1', 'type' => 'Tipe 72/120', 'price' => '550jt', 'status' => 'Sold', 'customer' => 'Irwan H.'],
-        ['id' => 'S1-01', 'project' => 'Scandinavian Hill Phase 2', 'block' => 'Blok Scandi A', 'type' => 'Tipe Nordic 50', 'price' => '385jt', 'status' => 'Booking', 'customer' => 'Rian F.'],
-        ['id' => 'S2-01', 'project' => 'Scandinavian Hill Phase 2', 'block' => 'Blok Scandi B', 'type' => 'Tipe Nordic 70', 'price' => '495jt', 'status' => 'Available', 'customer' => null],
-    ];
-
-    $statusTiles = [
-        ['label' => 'All', 'count' => 120, 'color' => 'bg-slate-200'],
-        ['label' => 'Available', 'count' => 23, 'color' => 'bg-white border border-border-subtle'],
-        ['label' => 'Booking', 'count' => 12, 'color' => 'bg-accent'],
-        ['label' => 'Sold', 'count' => 85, 'color' => 'bg-emerald-custom'],
-    ];
-@endphp
+@section('title', 'Manajemen Kavling - ArkanaProperty')
 
 @section('main')
 <div class="space-y-8 relative" data-kavling
      data-projects='@json($projects)'
      data-blocks='@json($blocks)'
      data-house-types='@json($houseTypes)'
-     data-kavling-data='@json($kavlingData)'>
+     data-kavling-data='@json($kavlingData)'
+     data-initial-project="{{ $initialProject }}"
+     data-update-url="{{ url('admin/kavling') }}">
 
     {{-- Unit Detail Overlay --}}
     <div class="fixed inset-0 bg-primary/20 backdrop-blur-sm z-50 items-center justify-center p-4 hidden" data-kavling-overlay>
@@ -59,7 +20,7 @@
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Detail Kavling</p>
                         <h2 class="text-4xl font-black" data-kavling-modal-id></h2>
                     </div>
-                    <button class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors" data-kavling-modal-close>
+                    <button type="button" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors" data-kavling-modal-close>
                         <i data-lucide="x-circle" class="size-6"></i>
                     </button>
                 </div>
@@ -84,20 +45,34 @@
                     </div>
                 </div>
 
-                <div class="pt-6 border-t border-border-subtle space-y-4">
-                    <h4 class="text-xs font-black text-primary uppercase tracking-widest">Opsi Manajemen</h4>
-                    <div class="grid grid-cols-1 gap-2">
-                        <button class="flex items-center justify-between p-4 bg-surface-soft rounded-2xl font-bold text-sm text-primary hover:bg-border-subtle transition-all">
-                            Update Status Unit <i data-lucide="chevron-right" class="size-4"></i>
-                        </button>
-                        <button class="flex items-center justify-between p-4 bg-surface-soft rounded-2xl font-bold text-sm text-primary hover:bg-border-subtle transition-all">
-                            Lihat Berkas Konsumen <i data-lucide="chevron-right" class="size-4"></i>
-                        </button>
-                        <button class="flex items-center justify-between p-4 bg-surface-soft rounded-2xl font-bold text-sm text-primary hover:bg-border-subtle transition-all">
-                            Edit Spesifikasi Kavling <i data-lucide="chevron-right" class="size-4"></i>
-                        </button>
+                <form method="POST" action="#" class="pt-6 border-t border-border-subtle space-y-4" data-kavling-update-form>
+                    @csrf
+                    @method('PUT')
+                    <h4 class="text-xs font-black text-primary uppercase tracking-widest">Update Status Unit</h4>
+                    <div class="grid grid-cols-1 gap-3">
+                        <select name="status" class="w-full p-4 bg-surface-soft rounded-2xl font-bold text-sm text-primary outline-none" data-kavling-status-input>
+                            <option value="tersedia">Tersedia</option>
+                            <option value="booking">Booking</option>
+                            <option value="terjual">Terjual</option>
+                        </select>
+                        <select name="id_leads" class="w-full p-4 bg-surface-soft rounded-2xl font-bold text-sm text-primary outline-none" data-kavling-buyer-input>
+                            <option value="">— Belum ada pembeli —</option>
+                            @foreach ($buyers as $buyer)
+                                <option value="{{ $buyer['id'] }}">{{ $buyer['nama'] }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-[10px] text-primary/40">Pembeli dipilih dari lead tervalidasi. Status "Tersedia" otomatis melepas pembeli.</p>
+                        <button type="submit" class="btn-primary w-full">Simpan Perubahan</button>
                     </div>
-                </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <a href="#" class="flex items-center justify-between p-4 bg-surface-soft rounded-2xl font-bold text-xs text-primary hover:bg-border-subtle transition-all" data-kavling-customer-link>
+                            Berkas Konsumen <i data-lucide="chevron-right" class="size-4"></i>
+                        </a>
+                        <a href="#" target="_blank" class="flex items-center justify-between p-4 bg-surface-soft rounded-2xl font-bold text-xs text-primary hover:bg-border-subtle transition-all" data-kavling-panel-link>
+                            Edit di Panel <i data-lucide="chevron-right" class="size-4"></i>
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -108,14 +83,35 @@
             <p class="text-primary/60">Monitor ketersediaan unit dan status penjualan secara real-time.</p>
         </div>
         <div class="flex gap-2">
-            <button class="flex items-center gap-2 px-4 py-2 bg-white border border-border-subtle rounded-xl font-bold text-xs hover:border-accent transition-colors">
-                <i data-lucide="maximize-2" class="size-4"></i> Site Plan View
-            </button>
-            <button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+            <a href="{{ config('services.arkana_api.admin_panel_url') }}/kavling" class="flex items-center gap-2 px-4 py-2 bg-white border border-border-subtle rounded-xl font-bold text-xs hover:border-accent transition-colors">
+                <i data-lucide="maximize-2" class="size-4"></i> Buka di Admin Panel
+            </a>
+            <button type="button" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all" data-toggle-create>
                 <i data-lucide="plus" class="size-4"></i> Tambah Kavling
             </button>
         </div>
     </div>
+
+    <form method="POST" action="{{ route('admin.kavling.store') }}" class="{{ $errors->any() ? '' : 'hidden' }} bg-white rounded-[32px] border border-border-subtle shadow-sm p-6 grid grid-cols-1 md:grid-cols-5 gap-3 items-end" data-create-form>
+        @csrf
+        <div class="md:col-span-2 space-y-1">
+            <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Perumahan / Tipe</label>
+            <select name="id_tipe" required class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none">
+                @foreach ($tipeOptions as $tipe)
+                    <option value="{{ $tipe['id'] }}" @selected((int) old('id_tipe') === $tipe['id'])>{{ $tipe['label'] }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Blok</label>
+            <input name="blok" value="{{ old('blok') }}" placeholder="Blok A" class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none" />
+        </div>
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Nomor</label>
+            <input name="nomor_kavling" value="{{ old('nomor_kavling') }}" required placeholder="A-07" class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none" />
+        </div>
+        <button type="submit" class="btn-primary">Tambah</button>
+    </form>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {{-- Sidebar Filters --}}
@@ -126,7 +122,7 @@
                 </h3>
                 <select class="w-full p-4 bg-surface-soft rounded-2xl font-bold text-primary outline-none focus:ring-1 focus:ring-accent appearance-none" data-project-select>
                     @foreach ($projects as $p)
-                        <option value="{{ $p }}">{{ $p }}</option>
+                        <option value="{{ $p['id'] }}" @selected($p['id'] === $initialProject)>{{ $p['name'] }}</option>
                     @endforeach
                 </select>
             </div>
@@ -151,7 +147,7 @@
                 </h3>
                 <div class="space-y-3" data-status-list>
                     @foreach ($statusTiles as $status)
-                        <button data-status="{{ $status['label'] }}" class="w-full flex items-center justify-between p-2 rounded-xl text-xs font-bold transition-all {{ $status['label'] === 'All' ? 'bg-surface-soft ring-1 ring-accent/30' : 'hover:bg-surface-soft' }}">
+                        <button type="button" data-status="{{ $status['value'] }}" class="w-full flex items-center justify-between p-2 rounded-xl text-xs font-bold transition-all {{ $status['value'] === 'all' ? 'bg-surface-soft ring-1 ring-accent/30' : 'hover:bg-surface-soft' }}">
                             <div class="flex items-center gap-3">
                                 <div class="w-3 h-3 rounded-full {{ $status['color'] }}"></div>
                                 {{ $status['label'] }}
@@ -170,7 +166,7 @@
                     <h2 class="text-xl font-black text-primary"><span data-current-block></span> <span class="text-accent">—</span> Detail Unit</h2>
                     <div class="relative">
                         <i data-lucide="search" class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-primary/30"></i>
-                        <input type="text" placeholder="Cari nomor unit..." class="bg-surface-soft border-none rounded-xl py-2 pl-10 pr-4 text-xs font-bold outline-none focus:ring-1 focus:ring-accent" data-kavling-search />
+                        <input type="text" placeholder="Cari unit / konsumen..." class="bg-surface-soft border-none rounded-xl py-2 pl-10 pr-4 text-xs font-bold outline-none focus:ring-1 focus:ring-accent" data-kavling-search />
                     </div>
                 </div>
 
@@ -179,7 +175,7 @@
                 <div class="mt-12 flex flex-wrap gap-6 pt-8 border-t border-border-subtle">
                     <div class="flex items-center gap-2">
                         <div class="w-4 h-4 rounded-md bg-white border-2 border-dashed border-border-subtle"></div>
-                        <span class="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Available</span>
+                        <span class="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Tersedia</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="w-4 h-4 rounded-md bg-accent"></div>
@@ -187,7 +183,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="w-4 h-4 rounded-md bg-emerald-custom"></div>
-                        <span class="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Sold</span>
+                        <span class="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Terjual</span>
                     </div>
                 </div>
             </div>
@@ -204,14 +200,17 @@
         var blocks = JSON.parse(root.getAttribute('data-blocks'));
         var houseTypes = JSON.parse(root.getAttribute('data-house-types'));
         var kavlingData = JSON.parse(root.getAttribute('data-kavling-data'));
+        var updateUrl = root.getAttribute('data-update-url');
+        var panelUrl = @json(config('services.arkana_api.admin_panel_url'));
+        var leadsUrl = @json(route('admin.leads'));
 
-        var state = {
-            project: projects[0],
-            block: blocks[projects[0]][0],
-            type: 'All',
-            status: 'All',
-            search: '',
-        };
+        var initialProject = parseInt(root.getAttribute('data-initial-project'), 10) || (projects[0] && projects[0].id);
+        var state = { project: initialProject, block: (blocks[initialProject] || [])[0], type: 'All', status: 'all', search: '' };
+
+        var createForm = root.querySelector('[data-create-form]');
+        root.querySelectorAll('[data-toggle-create]').forEach(function (btn) {
+            btn.addEventListener('click', function () { createForm.classList.toggle('hidden'); });
+        });
 
         var projectSelect = root.querySelector('[data-project-select]');
         var blockList = root.querySelector('[data-block-list]');
@@ -221,26 +220,34 @@
         var grid = root.querySelector('[data-kavling-grid]');
         var currentBlockLabel = root.querySelector('[data-current-block]');
 
+        function esc(value) {
+            var div = document.createElement('div');
+            div.textContent = value == null ? '' : String(value);
+            return div.innerHTML;
+        }
+
         function statusStyle(status) {
             switch (status) {
-                case 'Sold': return 'bg-emerald-custom text-white shadow-lg shadow-emerald-custom/20';
-                case 'Booking': return 'bg-accent text-white shadow-lg shadow-emerald-custom/20';
-                case 'Available': return 'bg-white border-2 border-dashed border-border-subtle text-primary/40 hover:border-accent hover:text-accent';
-                default: return 'bg-slate-100 text-slate-500';
+                case 'terjual': return 'bg-emerald-custom text-white shadow-lg shadow-emerald-custom/20';
+                case 'booking': return 'bg-accent text-white shadow-lg shadow-emerald-custom/20';
+                default: return 'bg-white border-2 border-dashed border-border-subtle text-primary/40 hover:border-accent hover:text-accent';
             }
         }
 
         function renderBlocks() {
             blockList.innerHTML = '';
-            blocks[state.project].forEach(function (block) {
+            var list = blocks[state.project] || [];
+            if (!list.length) {
+                blockList.innerHTML = '<p class="text-xs text-primary/40">Belum ada kavling.</p>';
+                return;
+            }
+            list.forEach(function (block) {
                 var active = state.block === block;
                 var btn = document.createElement('button');
+                btn.type = 'button';
                 btn.className = 'w-full flex items-center justify-between p-4 rounded-2xl font-bold transition-all ' + (active ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-surface-soft text-primary/60 hover:bg-border-subtle');
-                btn.innerHTML = '<span class="text-xs">' + block + '</span><i data-lucide="chevron-right" class="size-3.5 ' + (active ? 'opacity-100' : 'opacity-0') + '"></i>';
-                btn.addEventListener('click', function () {
-                    state.block = block;
-                    renderAll();
-                });
+                btn.innerHTML = '<span class="text-xs">' + esc(block) + '</span><i data-lucide="chevron-right" class="size-3.5 ' + (active ? 'opacity-100' : 'opacity-0') + '"></i>';
+                btn.addEventListener('click', function () { state.block = block; renderAll(); });
                 blockList.appendChild(btn);
             });
         }
@@ -248,13 +255,15 @@
         function renderTypes() {
             typeList.innerHTML = '';
             var allBtn = document.createElement('button');
+            allBtn.type = 'button';
             allBtn.className = 'w-full p-3 rounded-xl text-xs font-bold transition-all ' + (state.type === 'All' ? 'bg-accent text-white' : 'bg-surface-soft text-primary/60');
             allBtn.textContent = 'Semua Tipe';
             allBtn.addEventListener('click', function () { state.type = 'All'; renderAll(); });
             typeList.appendChild(allBtn);
 
-            houseTypes[state.project].forEach(function (type) {
+            (houseTypes[state.project] || []).forEach(function (type) {
                 var btn = document.createElement('button');
+                btn.type = 'button';
                 btn.className = 'w-full p-3 rounded-xl text-xs font-bold transition-all ' + (state.type === type ? 'bg-accent text-white' : 'bg-surface-soft text-primary/60');
                 btn.textContent = type;
                 btn.addEventListener('click', function () { state.type = type; renderAll(); });
@@ -263,28 +272,35 @@
         }
 
         function renderGrid() {
-            currentBlockLabel.textContent = state.block;
+            currentBlockLabel.textContent = state.block || '-';
             grid.innerHTML = '';
             var term = state.search.toLowerCase();
 
-            kavlingData.filter(function (k) {
+            var items = kavlingData.filter(function (k) {
                 if (k.project !== state.project) return false;
                 if (k.block !== state.block) return false;
                 if (state.type !== 'All' && k.type !== state.type) return false;
-                if (state.status !== 'All' && k.status !== state.status) return false;
-                if (term && k.id.toLowerCase().indexOf(term) === -1 && !(k.customer && k.customer.toLowerCase().indexOf(term) !== -1)) return false;
+                if (state.status !== 'all' && k.status !== state.status) return false;
+                if (term && k.code.toLowerCase().indexOf(term) === -1 && !(k.customer && k.customer.toLowerCase().indexOf(term) !== -1)) return false;
                 return true;
-            }).forEach(function (k) {
+            });
+
+            if (!items.length) {
+                grid.innerHTML = '<p class="col-span-full text-center text-primary/40 py-10">Tidak ada unit yang cocok.</p>';
+            }
+
+            items.forEach(function (k) {
                 var card = document.createElement('div');
                 card.className = 'aspect-square rounded-3xl p-4 flex flex-col justify-between cursor-pointer transition-all hover:-translate-y-1 ' + statusStyle(k.status);
+                card.setAttribute('data-unit', k.code);
                 card.innerHTML =
                     '<div class="flex justify-between items-start">' +
-                        '<span class="text-lg font-black">' + k.id + '</span>' +
-                        '<button class="p-1 hover:bg-black/5 rounded-md transition-colors"><i data-lucide="more-vertical" class="size-3.5"></i></button>' +
+                        '<span class="text-lg font-black">' + esc(k.code) + '</span>' +
+                        '<i data-lucide="more-vertical" class="size-3.5"></i>' +
                     '</div>' +
                     '<div>' +
-                        '<p class="text-[9px] font-black uppercase tracking-widest mb-1 ' + (k.status === 'Available' ? 'text-primary/20' : 'text-white/60') + '">' + k.type + '</p>' +
-                        '<p class="text-[10px] font-bold truncate">' + (k.customer || 'TERSEDIA') + '</p>' +
+                        '<p class="text-[9px] font-black uppercase tracking-widest mb-1 ' + (k.status === 'tersedia' ? 'text-primary/20' : 'text-white/60') + '">' + esc(k.type) + '</p>' +
+                        '<p class="text-[10px] font-bold truncate">' + esc(k.customer || 'TERSEDIA') + '</p>' +
                     '</div>';
                 card.addEventListener('click', function () { openOverlay(k); });
                 grid.appendChild(card);
@@ -301,8 +317,8 @@
         }
 
         projectSelect.addEventListener('change', function () {
-            state.project = projectSelect.value;
-            state.block = blocks[state.project][0];
+            state.project = parseInt(projectSelect.value, 10);
+            state.block = (blocks[state.project] || [])[0];
             state.type = 'All';
             renderAll();
         });
@@ -329,21 +345,22 @@
         var overlay = root.querySelector('[data-kavling-overlay]');
         var modalCard = root.querySelector('[data-kavling-modal-card]');
         var modalHeader = root.querySelector('[data-kavling-modal-header]');
-        var modalId = root.querySelector('[data-kavling-modal-id]');
-        var modalType = root.querySelector('[data-kavling-modal-type]');
-        var modalPrice = root.querySelector('[data-kavling-modal-price]');
-        var modalDot = root.querySelector('[data-kavling-modal-dot]');
-        var modalStatus = root.querySelector('[data-kavling-modal-status]');
-        var modalCustomer = root.querySelector('[data-kavling-modal-customer]');
+        var updateForm = root.querySelector('[data-kavling-update-form]');
 
         function openOverlay(k) {
-            modalHeader.className = 'p-8 text-white ' + (k.status === 'Sold' ? 'bg-emerald-custom' : k.status === 'Booking' ? 'bg-accent' : 'bg-primary');
-            modalId.textContent = k.id;
-            modalType.textContent = k.type;
-            modalPrice.textContent = k.price;
-            modalDot.className = 'w-3 h-3 rounded-full ' + (k.status === 'Sold' ? 'bg-emerald-500' : k.status === 'Booking' ? 'bg-accent' : 'bg-slate-300');
-            modalStatus.textContent = k.status;
-            modalCustomer.textContent = k.customer || 'Belum Ada';
+            modalHeader.className = 'p-8 text-white ' + (k.status === 'terjual' ? 'bg-emerald-custom' : k.status === 'booking' ? 'bg-accent' : 'bg-primary');
+            root.querySelector('[data-kavling-modal-id]').textContent = k.code;
+            root.querySelector('[data-kavling-modal-type]').textContent = k.type;
+            root.querySelector('[data-kavling-modal-price]').textContent = k.price;
+            root.querySelector('[data-kavling-modal-dot]').className = 'w-3 h-3 rounded-full ' + (k.status === 'terjual' ? 'bg-emerald-500' : k.status === 'booking' ? 'bg-accent' : 'bg-slate-300');
+            root.querySelector('[data-kavling-modal-status]').textContent = k.status_label;
+            root.querySelector('[data-kavling-modal-customer]').textContent = k.customer || 'Belum Ada';
+            updateForm.action = updateUrl + '/' + k.id;
+            root.querySelector('[data-kavling-status-input]').value = k.status;
+            root.querySelector('[data-kavling-buyer-input]').value = k.id_leads || '';
+            var customerLink = root.querySelector('[data-kavling-customer-link]');
+            customerLink.href = leadsUrl + (k.customer ? '?search=' + encodeURIComponent(k.customer) : '');
+            root.querySelector('[data-kavling-panel-link]').href = panelUrl + '/kavling/' + k.id + '/edit';
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
             if (window.lucide) lucide.createIcons();
