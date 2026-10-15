@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | ArkanaProperty Backend
+    |--------------------------------------------------------------------------
+    |
+    | Base URL of the backend REST API (called server-side with the Sanctum
+    | token stored in the session) and the backend's Filament admin panel.
+    |
+    */
+
+    'arkana_api' => [
+        'url' => env('ARKANA_API_URL', 'http://127.0.0.1:8000/api'),
+        'timeout' => (int) env('ARKANA_API_TIMEOUT', 10),
+        'admin_panel_url' => env('ARKANA_ADMIN_PANEL_URL', 'http://127.0.0.1:8000/admin'),
+    ],
+
 ];

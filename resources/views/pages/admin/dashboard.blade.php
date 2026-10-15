@@ -1,28 +1,16 @@
-@extends('layouts.dashboard')
+@extends('layouts.dashboard', ['role' => 'admin'])
+
+@section('title', 'Dashboard Admin - ArkanaProperty')
 
 @php
-    $role = 'admin';
-@endphp
-@section('title', 'Design Arkanaproperty Web App')
-
-@php
-    $leads = [
-        ['id' => 1, 'name' => 'Ahmad Rizky', 'phone' => '081234567890', 'property' => 'Tipe 36/60', 'status' => 'Hot Prospect', 'date' => '7 Juni 2026'],
-        ['id' => 2, 'name' => 'Siti Aminah', 'phone' => '089876543210', 'property' => 'Premium Cluster', 'status' => 'New Lead', 'date' => '7 Juni 2026'],
-        ['id' => 3, 'name' => 'Budi Santoso', 'phone' => '081122334455', 'property' => 'Tipe 36/60', 'status' => 'Cold Lead', 'date' => '6 Juni 2026'],
-        ['id' => 4, 'name' => 'Dewi Lestari', 'phone' => '085566778899', 'property' => 'Premium Cluster', 'status' => 'Interested', 'date' => '6 Juni 2026'],
-    ];
+    use App\Support\Badge;
+    use App\Support\Format;
 
     $kavlingStats = [
-        ['label' => 'Total Unit', 'value' => 120, 'color' => 'bg-primary'],
-        ['label' => 'Terjual', 'value' => 85, 'color' => 'bg-emerald-custom'],
-        ['label' => 'Booking', 'value' => 12, 'color' => 'bg-accent'],
-        ['label' => 'Tersedia', 'value' => 23, 'color' => 'bg-slate-200 text-primary'],
-    ];
-
-    $statusClasses = [
-        'Hot Prospect' => 'bg-orange-100 text-orange-600',
-        'New Lead' => 'bg-blue-100 text-blue-600',
+        ['label' => 'Total Unit', 'value' => $summary['unit']['total'], 'color' => 'bg-primary'],
+        ['label' => 'Terjual', 'value' => $summary['unit']['terjual'], 'color' => 'bg-emerald-custom'],
+        ['label' => 'Booking', 'value' => $summary['unit']['booking'], 'color' => 'bg-accent'],
+        ['label' => 'Tersedia', 'value' => $summary['unit']['tersedia'], 'color' => 'bg-slate-200 text-primary'],
     ];
 @endphp
 
@@ -31,15 +19,18 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-black text-primary">Overview Dashboard</h1>
-            <p class="text-primary/60">Selamat pagi, Administrator. Berikut ringkasan hari ini.</p>
+            <p class="text-primary/60">
+                Selamat datang, {{ session('api.akun.nama', 'Administrator') }}.
+                {{ $summary['leads']['pending'] }} lead menunggu validasi dari {{ $summary['perumahan'] }} perumahan dan {{ $summary['marketing'] }} marketing aktif.
+            </p>
         </div>
         <div class="flex gap-3">
-            <button class="flex items-center gap-2 px-4 py-2 bg-white border border-border-subtle rounded-xl font-bold text-xs hover:border-accent transition-colors">
-                <i data-lucide="filter" class="size-4"></i> Filter Data
-            </button>
-            <button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+            <a href="{{ route('admin.leads', ['status' => 'pending']) }}" class="flex items-center gap-2 px-4 py-2 bg-white border border-border-subtle rounded-xl font-bold text-xs hover:border-accent transition-colors">
+                <i data-lucide="filter" class="size-4"></i> Leads Menunggu
+            </a>
+            <a href="{{ route('admin.kavling') }}" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all">
                 <i data-lucide="plus" class="size-4"></i> Tambah Unit
-            </button>
+            </a>
         </div>
     </div>
 
@@ -54,7 +45,7 @@
                     @if ($stat['label'] === 'Total Unit')
                         <i data-lucide="home" class="size-6"></i>
                     @else
-                        {{ $stat['value'] }}
+                        {{ $summary['unit']['total'] ? round($stat['value'] / $summary['unit']['total'] * 100) : 0 }}%
                     @endif
                 </div>
             </div>
@@ -68,7 +59,7 @@
                 <h3 class="font-black text-primary flex items-center gap-2">
                     <i data-lucide="users" class="size-[18px] text-accent"></i> Data Leads Terbaru
                 </h3>
-                <button class="text-accent text-xs font-bold hover:underline">Lihat Semua</button>
+                <a href="{{ route('admin.leads') }}" class="text-accent text-xs font-bold hover:underline">Lihat Semua</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
@@ -77,34 +68,30 @@
                             <th class="px-6 py-4 text-[10px] font-bold text-primary/40 uppercase tracking-widest">Customer</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-primary/40 uppercase tracking-widest">Property</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-primary/40 uppercase tracking-widest">Status</th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-primary/40 uppercase tracking-widest">Aksi</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-primary/40 uppercase tracking-widest">Masuk</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border-subtle">
-                        @foreach ($leads as $lead)
+                        @forelse ($summary['leads_terbaru'] as $lead)
                             <tr class="hover:bg-surface-soft/50 transition-colors">
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-primary">{{ $lead['name'] }}</div>
-                                    <div class="text-[10px] text-primary/40">{{ $lead['phone'] }}</div>
+                                    <div class="font-bold text-primary">{{ $lead['nama_calon'] }}</div>
+                                    <div class="text-[10px] text-primary/40">{{ $lead['no_telp'] }}</div>
                                 </td>
-                                <td class="px-6 py-4 text-xs font-medium text-primary/70">{{ $lead['property'] }}</td>
+                                <td class="px-6 py-4 text-xs font-medium text-primary/70">
+                                    {{ $lead['tipe_rumah']['nama_tipe'] ?? '-' }}
+                                    <div class="text-[10px] text-primary/40">{{ $lead['perumahan']['nama_perumahan'] ?? '' }}</div>
+                                </td>
                                 <td class="px-6 py-4">
-                                    <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter {{ $statusClasses[$lead['status']] ?? 'bg-slate-100 text-slate-500' }}">
-                                        {{ $lead['status'] }}
+                                    <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter {{ Badge::leadStatus($lead['status_keseriusan']) }}">
+                                        {{ $lead['status_label'] }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex gap-2">
-                                        <button class="p-2 hover:bg-white rounded-lg border border-transparent hover:border-border-subtle transition-all">
-                                            <i data-lucide="check-circle-2" class="size-4 text-emerald-custom"></i>
-                                        </button>
-                                        <button class="p-2 hover:bg-white rounded-lg border border-transparent hover:border-border-subtle transition-all">
-                                            <i data-lucide="more-horizontal" class="size-4 text-primary/40"></i>
-                                        </button>
-                                    </div>
-                                </td>
+                                <td class="px-6 py-4 text-xs text-primary/50">{{ Format::date($lead['created_at'], 'D MMM YYYY') }}</td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr><td colspan="4" class="px-6 py-10 text-center text-primary/40">Belum ada lead masuk.</td></tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -116,22 +103,25 @@
                 <i data-lucide="trending-up" class="size-[18px] text-accent"></i> Laporan Marketing
             </h3>
             <div class="space-y-6">
-                @for ($i = 0; $i < 3; $i++)
+                @forelse ($summary['report_terbaru'] as $report)
                     <div class="relative pl-6 pb-6 border-l-2 border-surface-soft last:pb-0">
                         <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-accent border-4 border-white"></div>
                         <div class="flex items-center justify-between mb-1">
-                            <p class="text-xs font-black text-primary">Dimas Marketing</p>
-                            <span class="text-[10px] text-primary/40">10:30 AM</span>
+                            <p class="text-xs font-black text-primary">{{ $report['marketing']['nama'] ?? '-' }}</p>
+                            <span class="text-[10px] text-primary/40">{{ Format::date($report['tanggal_report'], 'D MMM') }}</span>
                         </div>
-                        <p class="text-xs text-primary/60 leading-relaxed">
-                            Menyelesaikan survey lokasi dengan Bapak Ahmad di unit Premium Cluster Blok A-12.
-                        </p>
-                        <div class="mt-2 flex gap-2">
-                            <span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-bold rounded">Selesai Survey</span>
-                        </div>
+                        <p class="text-xs text-primary/60 leading-relaxed">{{ $report['deskripsi_progres'] }}</p>
+                        @if ($report['jenis_aktivitas'])
+                            <div class="mt-2 flex gap-2">
+                                <span class="px-2 py-0.5 text-[9px] font-bold rounded {{ Badge::activity($report['jenis_aktivitas']) }}">{{ $report['jenis_aktivitas_label'] }}</span>
+                            </div>
+                        @endif
                     </div>
-                @endfor
+                @empty
+                    <p class="text-xs text-primary/40">Belum ada laporan.</p>
+                @endforelse
             </div>
+            <a href="{{ route('admin.reports') }}" class="mt-6 inline-block text-accent text-xs font-bold hover:underline">Semua laporan</a>
         </div>
     </div>
 </div>

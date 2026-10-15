@@ -1,24 +1,15 @@
-@extends('layouts.dashboard')
+@extends('layouts.dashboard', ['role' => 'user'])
+
+@section('title', 'Timeline Progres - ArkanaProperty')
 
 @php
-    $role = 'user';
-@endphp
-@section('title', 'Design Arkanaproperty Web App')
-
-@php
-    $steps = [
-        ['title' => 'Booking Fee & Administrasi', 'date' => '12 Mei 2026', 'status' => 'Completed', 'desc' => 'Pembayaran tanda jadi dan penyerahan berkas awal (KTP, KK).', 'icon' => 'file-text'],
-        ['title' => 'Verifikasi Berkas & Wawancara', 'date' => '25 Mei 2026', 'status' => 'Completed', 'desc' => 'Analisa kemampuan bayar oleh tim analis dan verifikasi data lapangan.', 'icon' => 'shield-check'],
-        ['title' => 'Akad Kredit / Pelunasan', 'date' => '15 Juni 2026', 'status' => 'Current', 'desc' => 'Penandatanganan akta jual beli dan dokumen perbankan.', 'icon' => 'key'],
-        ['title' => 'Pembangunan Unit', 'date' => 'Juli - September 2026', 'status' => 'Upcoming', 'desc' => 'Proses konstruksi bangunan sesuai spesifikasi teknis.', 'icon' => 'home'],
-        ['title' => 'Serah Terima Kunci', 'date' => 'Oktober 2026', 'status' => 'Upcoming', 'desc' => 'Pemeriksaan akhir unit (checklist) dan penyerahan kunci.', 'icon' => 'truck'],
-    ];
-
     $badgeClasses = [
         'Completed' => 'bg-emerald-100 text-emerald-600',
         'Current' => 'bg-accent text-white',
         'Upcoming' => 'bg-slate-200 text-slate-500',
     ];
+
+    $statusLabels = ['Completed' => 'Selesai', 'Current' => 'Sedang Berjalan', 'Upcoming' => 'Berikutnya'];
 
     $iconCircleClasses = [
         'Completed' => 'bg-emerald-500 text-white',
@@ -34,9 +25,11 @@
             <h1 class="text-2xl font-black text-primary">Timeline Progres</h1>
             <p class="text-primary/60">Pantau setiap tahapan kepemilikan hunian Anda.</p>
         </div>
-        <button class="flex items-center gap-2 px-6 py-2 border-2 border-accent text-accent rounded-full font-bold text-xs hover:bg-accent hover:text-white transition-all active:scale-95">
-            <i data-lucide="download" class="size-4"></i> Unduh Panduan Konsumen
-        </button>
+        @if ($lead)
+            <span class="px-4 py-2 bg-white border border-border-subtle rounded-full font-bold text-xs text-primary/60">
+                {{ $lead['perumahan']['nama_perumahan'] ?? '' }}{{ $lead['kavling'] ? ' · '.$lead['kavling']['nomor_kavling'] : '' }}
+            </span>
+        @endif
     </div>
 
     <div class="bg-white p-8 md:p-12 rounded-[40px] border border-border-subtle shadow-sm">
@@ -49,13 +42,15 @@
                         <div class="flex-1 w-full sm:w-1/2 {{ $index % 2 === 0 ? 'sm:pl-12' : 'sm:pr-12 text-left sm:text-right' }}">
                             <div class="p-6 rounded-[32px] border transition-all {{ $step['status'] === 'Current' ? 'border-accent bg-accent/5 ring-4 ring-accent/5' : 'border-border-subtle bg-surface-soft/50' }}">
                                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 {{ $badgeClasses[$step['status']] }}">
-                                    {{ $step['status'] }}
+                                    {{ $statusLabels[$step['status']] }}
                                 </div>
                                 <h3 class="text-lg font-black text-primary mb-2">{{ $step['title'] }}</h3>
                                 <p class="text-sm text-primary/60 leading-relaxed mb-4">{{ $step['desc'] }}</p>
-                                <div class="flex items-center gap-2 text-xs font-bold text-primary/40">
-                                    <i data-lucide="clock" class="size-3.5"></i> Est. {{ $step['date'] }}
-                                </div>
+                                @if ($step['date'])
+                                    <div class="flex items-center gap-2 text-xs font-bold text-primary/40 {{ $index % 2 === 0 ? '' : 'sm:justify-end' }}">
+                                        <i data-lucide="clock" class="size-3.5"></i> {{ $step['date'] }}
+                                    </div>
+                                @endif
                             </div>
                         </div>
 
@@ -80,9 +75,11 @@
             <h4 class="font-black text-lg mb-1">Jaminan Kualitas Bangunan</h4>
             <p class="text-white/60 text-sm">Setiap unit Arkanaproperty melalui proses QC ketat dan memiliki garansi konstruksi selama 12 bulan setelah serah terima.</p>
         </div>
-        <button class="px-6 py-3 bg-white text-primary rounded-xl font-bold text-sm whitespace-nowrap hover:bg-accent hover:text-white transition-colors">
-            Lihat Spesifikasi Teknis
-        </button>
+        @if ($lead && $lead['id_tipe'])
+            <a href="{{ route('property.show', $lead['id_tipe']) }}" class="px-6 py-3 bg-white text-primary rounded-xl font-bold text-sm whitespace-nowrap hover:bg-accent hover:text-white transition-colors">
+                Lihat Spesifikasi Teknis
+            </a>
+        @endif
     </div>
 </div>
 @endsection
