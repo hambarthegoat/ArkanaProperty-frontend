@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\Marketing;
+use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,7 +47,7 @@ Route::prefix('marketing')->name('marketing.')->middleware('api.role:marketing')
 });
 
 Route::prefix('portal')->name('portal.')->middleware('api.role:leads')->group(function () {
-    Route::get('/', fn () => view('pages.portal.dashboard'))->name('dashboard');
-    Route::get('/reminders', fn () => view('pages.portal.timeline'))->name('reminders');
-    Route::get('/support', fn () => view('pages.portal.support'))->name('support');
+    Route::get('/', [PortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/reminders', [PortalController::class, 'timeline'])->name('reminders');
+    Route::get('/support', [PortalController::class, 'support'])->name('support');
 });
