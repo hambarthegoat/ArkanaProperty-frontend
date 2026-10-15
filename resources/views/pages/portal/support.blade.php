@@ -1,9 +1,5 @@
-@extends('layouts.dashboard')
-
-@php
-    $role = 'user';
-@endphp
-@section('title', 'Design Arkanaproperty Web App')
+@extends('layouts.dashboard', ['role' => 'user'])
+@section('title', 'Pusat Bantuan - ArkanaProperty')
 
 @php
     $categories = [
@@ -20,6 +16,30 @@
         <h1 class="text-2xl font-black text-primary">Pusat Bantuan</h1>
         <p class="text-primary/60">Kami siap membantu setiap kendala hunian Anda.</p>
     </div>
+
+    @if ($contact)
+        <div class="bg-white p-8 rounded-[32px] border border-border-subtle shadow-sm flex flex-col md:flex-row items-center justify-between gap-6" data-marketing-contact>
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                    <i data-lucide="user-check" class="size-7"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Marketing Pendamping Anda</p>
+                    <h3 class="font-black text-primary text-lg">{{ $contact['nama'] }}</h3>
+                    <p class="text-sm text-primary/60">{{ $contact['no_wa'] }}</p>
+                </div>
+            </div>
+            @if ($contact['wa_link'])
+                <a href="{{ $contact['wa_link'] }}" target="_blank" rel="noopener" class="px-6 py-3 bg-emerald-500 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-emerald-600 transition-all">
+                    <i data-lucide="message-square" class="size-5"></i> Chat WhatsApp
+                </a>
+            @endif
+        </div>
+    @else
+        <div class="p-6 bg-orange-50 border border-orange-100 rounded-3xl text-sm font-semibold text-orange-700">
+            Marketing pendamping belum ditugaskan. Tim admin akan segera menghubungi Anda.
+        </div>
+    @endif
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @foreach ($categories as $cat)
