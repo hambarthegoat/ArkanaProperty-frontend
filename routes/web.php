@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LeadController;
@@ -15,11 +16,23 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::prefix('admin')->name('admin.')->middleware('api.role:admin')->group(function () {
-    Route::get('/', fn () => view('pages.admin.dashboard'))->name('dashboard');
-    Route::get('/leads', fn () => view('pages.admin.leads'))->name('leads');
-    Route::get('/kavling', fn () => view('pages.admin.kavling'))->name('kavling');
-    Route::get('/perumahan', fn () => view('pages.admin.housing'))->name('perumahan');
-    Route::get('/reports', fn () => view('pages.admin.marketing-reports'))->name('reports');
+    Route::get('/', Admin\DashboardController::class)->name('dashboard');
+
+    Route::get('/leads', [Admin\LeadsController::class, 'index'])->name('leads');
+    Route::post('/leads/{id}/validate', [Admin\LeadsController::class, 'validateLead'])->name('leads.validate');
+    Route::post('/leads/{id}/reject', [Admin\LeadsController::class, 'reject'])->name('leads.reject');
+    Route::post('/leads/{id}/ktp', [Admin\LeadsController::class, 'uploadKtp'])->name('leads.ktp.upload');
+    Route::get('/leads/{id}/ktp', [Admin\LeadsController::class, 'ktp'])->name('leads.ktp');
+
+    Route::get('/kavling', [Admin\KavlingController::class, 'index'])->name('kavling');
+    Route::post('/kavling', [Admin\KavlingController::class, 'store'])->name('kavling.store');
+    Route::put('/kavling/{id}', [Admin\KavlingController::class, 'update'])->name('kavling.update');
+
+    Route::get('/perumahan', [Admin\PerumahanController::class, 'index'])->name('perumahan');
+    Route::post('/perumahan', [Admin\PerumahanController::class, 'store'])->name('perumahan.store');
+
+    Route::get('/reports', [Admin\ReportController::class, 'index'])->name('reports');
+    Route::get('/reports/export', [Admin\ReportController::class, 'export'])->name('reports.export');
 });
 
 Route::prefix('marketing')->name('marketing.')->middleware('api.role:marketing')->group(function () {

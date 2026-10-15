@@ -47,25 +47,41 @@ class ArkanaApi
     }
 
     /**
-     * Multipart POST; UploadedFile values are sent as file parts and null
-     * values are skipped.
+     * Multipart POST; UploadedFile values are sent as file parts, nested
+     * arrays are flattened to "key[0][field]" names and nulls are skipped.
      */
     public function postMultipart(string $uri, array $data): mixed
     {
         return $this->send(function (PendingRequest $http) use ($uri, $data) {
-            $http->asMultipart();
+            $fields = [];
 
-            foreach ($data as $name => $value) {
+            foreach (self::flatten($data) as $name => $value) {
                 if ($value instanceof UploadedFile) {
                     $http->attach($name, $value->get(), $value->getClientOriginalName());
-                    unset($data[$name]);
-                } elseif ($value === null) {
-                    unset($data[$name]);
+                } elseif ($value !== null) {
+                    $fields[] = ['name' => $name, 'contents' => (string) $value];
                 }
             }
 
-            return $http->post($uri, $data);
+            return $http->asMultipart()->post($uri, $fields);
         });
+    }
+
+    private static function flatten(array $data, string $prefix = ''): array
+    {
+        $flat = [];
+
+        foreach ($data as $key => $value) {
+            $name = $prefix === '' ? (string) $key : "{$prefix}[{$key}]";
+
+            if (is_array($value)) {
+                $flat += self::flatten($value, $name);
+            } else {
+                $flat[$name] = $value;
+            }
+        }
+
+        return $flat;
     }
 
     /**
