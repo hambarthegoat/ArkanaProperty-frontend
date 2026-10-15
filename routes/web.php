@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LeadController;
+use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('pages.landing'))->name('home');
-Route::get('/property/{id}', fn ($id) => view('pages.property-detail', ['id' => $id]))->name('property.show');
+Route::get('/', [LandingController::class, 'index'])->name('home');
+Route::get('/property/{id}', [PropertyController::class, 'show'])->whereNumber('id')->name('property.show');
+Route::post('/leads', [LeadController::class, 'store'])->middleware('throttle:10,1')->name('leads.store');
 
 Route::get('/login', [AuthController::class, 'show'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.attempt');
