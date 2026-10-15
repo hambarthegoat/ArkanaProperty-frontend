@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\Marketing;
 use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,9 +37,12 @@ Route::prefix('admin')->name('admin.')->middleware('api.role:admin')->group(func
 });
 
 Route::prefix('marketing')->name('marketing.')->middleware('api.role:marketing')->group(function () {
-    Route::get('/', fn () => view('pages.marketing.dashboard'))->name('dashboard');
-    Route::get('/calendar', fn () => view('pages.marketing.calendar'))->name('calendar');
-    Route::get('/reports', fn () => view('pages.marketing.reports'))->name('reports');
+    Route::get('/', Marketing\DashboardController::class)->name('dashboard');
+    Route::patch('/leads/{id}', [Marketing\LeadController::class, 'update'])->name('leads.update');
+    Route::get('/calendar', [Marketing\CalendarController::class, 'index'])->name('calendar');
+    Route::post('/calendar', [Marketing\CalendarController::class, 'store'])->name('calendar.store');
+    Route::get('/reports', [Marketing\ReportController::class, 'index'])->name('reports');
+    Route::post('/reports', [Marketing\ReportController::class, 'store'])->name('reports.store');
 });
 
 Route::prefix('portal')->name('portal.')->middleware('api.role:leads')->group(function () {
