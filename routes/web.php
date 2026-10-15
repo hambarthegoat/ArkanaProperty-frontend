@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('pages.landing'))->name('home');
 Route::get('/property/{id}', fn ($id) => view('pages.property-detail', ['id' => $id]))->name('property.show');
 
-Route::get('/login', fn () => view('pages.login'))->name('login');
+Route::get('/login', [AuthController::class, 'show'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.attempt');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->middleware('api.role:admin')->group(function () {
     Route::get('/', fn () => view('pages.admin.dashboard'))->name('dashboard');
     Route::get('/leads', fn () => view('pages.admin.leads'))->name('leads');
     Route::get('/kavling', fn () => view('pages.admin.kavling'))->name('kavling');
@@ -15,13 +18,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/reports', fn () => view('pages.admin.marketing-reports'))->name('reports');
 });
 
-Route::prefix('marketing')->name('marketing.')->group(function () {
+Route::prefix('marketing')->name('marketing.')->middleware('api.role:marketing')->group(function () {
     Route::get('/', fn () => view('pages.marketing.dashboard'))->name('dashboard');
     Route::get('/calendar', fn () => view('pages.marketing.calendar'))->name('calendar');
     Route::get('/reports', fn () => view('pages.marketing.reports'))->name('reports');
 });
 
-Route::prefix('portal')->name('portal.')->group(function () {
+Route::prefix('portal')->name('portal.')->middleware('api.role:leads')->group(function () {
     Route::get('/', fn () => view('pages.portal.dashboard'))->name('dashboard');
     Route::get('/reminders', fn () => view('pages.portal.timeline'))->name('reminders');
     Route::get('/support', fn () => view('pages.portal.support'))->name('support');

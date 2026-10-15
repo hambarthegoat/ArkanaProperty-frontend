@@ -1,6 +1,7 @@
 @extends('layouts.base')
 
 @php
+    $akun = session(\App\Services\ArkanaApi::SESSION_AKUN, []);
     $menuItems = [
         'admin' => [
             ['path' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'icon' => 'layout-dashboard', 'label' => 'Dashboard'],
@@ -42,10 +43,19 @@
         </nav>
 
         <div class="p-4 border-t border-white/10">
-            <a href="{{ route('home') }}" class="flex items-center gap-3 p-3 w-full text-white/60 hover:text-white transition-colors">
-                <i data-lucide="log-out" class="size-5 shrink-0"></i>
-                <span data-sidebar-label>Keluar</span>
-            </a>
+            @if ($role === 'admin')
+                <a href="{{ config('services.arkana_api.admin_panel_url') }}" class="flex items-center gap-3 p-3 w-full text-white/60 hover:text-white transition-colors">
+                    <i data-lucide="external-link" class="size-5 shrink-0"></i>
+                    <span data-sidebar-label>Admin Panel</span>
+                </a>
+            @endif
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="flex items-center gap-3 p-3 w-full text-white/60 hover:text-white transition-colors">
+                    <i data-lucide="log-out" class="size-5 shrink-0"></i>
+                    <span data-sidebar-label>Keluar</span>
+                </button>
+            </form>
         </div>
     </aside>
 
@@ -63,17 +73,18 @@
                 </button>
                 <div class="flex items-center gap-3 pl-4 border-l border-border-subtle">
                     <div class="text-right hidden sm:block">
-                        <p class="font-bold text-xs uppercase opacity-50">{{ $role }}</p>
-                        <p class="font-medium">Sistem User</p>
+                        <p class="font-bold text-xs uppercase opacity-50">{{ $role === 'user' ? 'konsumen' : $role }}</p>
+                        <p class="font-medium">{{ $akun['nama'] ?? 'Sistem User' }}</p>
                     </div>
                     <div class="w-10 h-10 bg-surface-soft rounded-full border border-border-subtle overflow-hidden">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ $role }}" alt="Avatar" />
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ urlencode($akun['username'] ?? $role) }}" alt="Avatar" />
                     </div>
                 </div>
             </div>
         </header>
 
         <main class="flex-grow overflow-y-auto p-6 lg:p-10">
+            @include('partials.flash')
             @yield('main')
         </main>
     </div>
