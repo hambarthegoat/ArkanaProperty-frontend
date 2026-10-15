@@ -119,9 +119,9 @@ php artisan optimize:clear    # membersihkan semua cache sekaligus
 | Landing | `/` | Halaman utama: hero, katalog properti, testimoni |
 | Detail Properti | `/property/{id}` | Detail unit & form konsultasi |
 | Login | `/login` | Login admin / marketing / konsumen (username = nomor HP untuk konsumen) |
-| Admin | `/admin`, `/admin/leads`, `/admin/kavling`, `/admin/perumahan`, `/admin/reports` | Dashboard administrator |
-| Marketing | `/marketing`, `/marketing/calendar`, `/marketing/reports` | Dashboard tim marketing |
-| Portal Konsumen | `/portal`, `/portal/reminders`, `/portal/support` | Portal untuk konsumen/pembeli unit |
+| Admin | `/admin`, `/admin/leads`, `/admin/kavling`, `/admin/perumahan`, `/admin/reports` | Dashboard administrator: validasi lead & KTP, kelola kavling/perumahan, laporan + export CSV (alternatif: admin panel Filament di backend) |
+| Marketing | `/marketing`, `/marketing/calendar`, `/marketing/reports` | Leads yang ditugaskan, agenda/kalender, laporan harian |
+| Portal Konsumen | `/portal`, `/portal/reminders`, `/portal/support` | Agenda dari marketing, timeline pembelian, kontak marketing |
 
 ## Lisensi
 
