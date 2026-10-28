@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $leads = collect($api->get('marketing/leads'))->map(fn ($lead) => [
             'id' => $lead['id'],
             'has_ktp' => (bool) ($lead['has_ktp'] ?? false),
-            'needs_ktp' => ! ($lead['has_ktp'] ?? false) && ($lead['status_keseriusan'] ?? null) !== 'rejected',
+            'needs_ktp' => ! ($lead['has_ktp'] ?? false) && ($lead['status_keseriusan'] ?? null) === 'pending',
             'name' => $lead['nama_calon'],
             'initials' => Format::initials($lead['nama_calon']),
             'phone' => $lead['no_telp'],

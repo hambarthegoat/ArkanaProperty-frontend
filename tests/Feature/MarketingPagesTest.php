@@ -128,6 +128,16 @@ class MarketingPagesTest extends TestCase
         $this->loginAs('marketing')->get('/marketing')->assertOk()->assertDontSee('Menunggu KTP')->assertSee('0 menunggu KTP');
     }
 
+    public function test_ktp_prompt_is_only_for_pending_leads(): void
+    {
+        Http::fake([
+            'api.test/api/marketing/leads' => self::api([self::lead(['has_ktp' => false, 'status_keseriusan' => 'validated'])]),
+            'api.test/api/marketing/calendar*' => self::api([]),
+        ]);
+
+        $this->loginAs('marketing')->get('/marketing')->assertOk()->assertDontSee('Menunggu KTP')->assertSee('0 menunggu KTP');
+    }
+
     public function test_update_lead_notes(): void
     {
         Http::fake(['api.test/api/marketing/leads/1' => self::api(self::lead(['prioritas' => 'sedang']))]);
