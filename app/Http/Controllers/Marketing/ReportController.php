@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Marketing;
 
 use App\Http\Controllers\Controller;
 use App\Services\ArkanaApi;
+use App\Support\LeadQueue;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -22,7 +23,7 @@ class ReportController extends Controller
     public function index()
     {
         return view('pages.marketing.reports', [
-            'leads' => $this->api->get('marketing/leads'),
+            'leads' => collect($this->api->get('marketing/leads'))->reject(fn ($lead) => LeadQueue::isQueued($lead))->values(),
             'history' => $this->api->get('marketing/reports'),
             'activities' => self::ACTIVITIES,
         ]);
