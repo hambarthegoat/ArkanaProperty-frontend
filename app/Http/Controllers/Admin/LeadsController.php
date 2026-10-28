@@ -24,12 +24,12 @@ class LeadsController extends Controller
 
     public function validateLead(Request $request, int $id)
     {
-        $request->validate(['id_marketing' => 'required|integer']);
+        $request->validate(['id_marketing' => 'nullable|integer']);
 
-        $result = $this->api->post("admin/leads/{$id}/validate", [
+        $result = $this->api->post("admin/leads/{$id}/validate", array_filter([
             'is_valid' => true,
-            'id_marketing' => (int) $request->input('id_marketing'),
-        ]);
+            'id_marketing' => $request->filled('id_marketing') ? (int) $request->input('id_marketing') : null,
+        ], fn ($value) => $value !== null));
 
         $kredensial = $result['kredensial'];
         $message = "Lead {$result['lead']['nama_calon']} tervalidasi dan ditugaskan ke {$result['lead']['marketing']['nama']}.";
@@ -45,15 +45,6 @@ class LeadsController extends Controller
         $lead = $this->api->post("admin/leads/{$id}/validate", ['is_valid' => false]);
 
         return back()->with('success', "Lead {$lead['nama_calon']} ditolak.");
-    }
-
-    public function uploadKtp(Request $request, int $id)
-    {
-        $request->validate(['file_ktp' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120']);
-
-        $lead = $this->api->postMultipart("admin/leads/{$id}/ktp", ['file_ktp' => $request->file('file_ktp')]);
-
-        return back()->with('success', "KTP {$lead['nama_calon']} berhasil diunggah.");
     }
 
     /**

@@ -17,4 +17,17 @@ class LeadController extends Controller
 
         return back()->with('success', "Catatan untuk {$lead['nama_calon']} disimpan.");
     }
+
+    /**
+     * KTP is collected by marketing. Uploading to a lead from the queue
+     * claims it for the logged-in marketing.
+     */
+    public function uploadKtp(Request $request, ArkanaApi $api, int $id)
+    {
+        $request->validate(['file_ktp' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120']);
+
+        $lead = $api->postMultipart("marketing/leads/{$id}/ktp", ['file_ktp' => $request->file('file_ktp')]);
+
+        return back()->with('success', "KTP {$lead['nama_calon']} berhasil diunggah. Admin dapat memvalidasi lead ini.");
+    }
 }

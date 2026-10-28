@@ -111,7 +111,7 @@
                         <h3 class="text-2xl font-black mb-4">Konsultasi Gratis</h3>
                         <p class="text-white/60 text-sm mb-8">Dapatkan penawaran cicilan khusus dan jadwal survey lokasi gratis hari ini.</p>
 
-                        <form method="POST" action="{{ route('leads.store') }}" enctype="multipart/form-data" class="space-y-4" data-consult-form>
+                        <form method="POST" action="{{ route('leads.store') }}" class="space-y-4" data-consult-form>
                             @csrf
                             <input type="hidden" name="id_tipe" value="{{ $property['id'] }}" />
                             @if ($errors->any() || session('error'))
@@ -129,10 +129,6 @@
                             <div class="space-y-1">
                                 <label for="consult-telp" class="text-[10px] font-bold text-white/40 uppercase tracking-widest px-2">Nomor WhatsApp</label>
                                 <input id="consult-telp" name="no_telp" value="{{ old('no_telp') }}" required type="tel" placeholder="0812xxxxxxxx" class="w-full bg-white/10 border border-white/10 rounded-2xl py-4 px-6 focus:bg-white/20 focus:ring-2 focus:ring-accent outline-none font-medium transition-all" />
-                            </div>
-                            <div class="space-y-1">
-                                <label for="consult-ktp" class="text-[10px] font-bold text-white/40 uppercase tracking-widest px-2">Foto KTP (opsional)</label>
-                                <input id="consult-ktp" name="file_ktp" type="file" accept=".jpg,.jpeg,.png,.pdf" class="w-full bg-white/10 border border-white/10 rounded-2xl py-3 px-6 text-sm text-white/70 file:mr-3 file:rounded-lg file:border-0 file:bg-white/20 file:px-3 file:py-1 file:font-bold file:text-white" />
                             </div>
                             <button type="submit" class="w-full bg-accent text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
                                 Hubungi Marketing <i data-lucide="arrow-right" class="size-[22px]"></i>

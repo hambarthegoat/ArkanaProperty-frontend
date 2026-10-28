@@ -97,7 +97,7 @@ class PublicPagesTest extends TestCase
         $this->get('/property/99')->assertNotFound();
     }
 
-    public function test_interest_form_posts_multipart_with_optional_ktp(): void
+    public function test_interest_form_does_not_send_ktp(): void
     {
         Http::fake(['api.test/api/public/leads' => self::api(['id' => 10], 201)]);
 
@@ -111,9 +111,21 @@ class PublicPagesTest extends TestCase
             ->assertRedirect('/property/1')
             ->assertSessionHas('lead_success.id_tipe', 1);
 
-        Http::assertSent(fn (Request $r) => $r->isMultipart()
-            && collect($r->data())->contains(fn ($part) => $part['name'] === 'file_ktp')
-            && collect($r->data())->contains(fn ($part) => $part['name'] === 'nama_calon' && $part['contents'] === 'Budi'));
+        Http::assertSent(fn (Request $r) => ! $r->isMultipart()
+            && $r['nama_calon'] === 'Budi'
+            && ! isset($r['file_ktp']));
+    }
+
+    public function test_public_forms_have_no_ktp_input(): void
+    {
+        Http::fake([
+            'api.test/api/public/filters' => self::api(['lokasi' => [], 'jenis_rumah' => [], 'cicilan' => []]),
+            'api.test/api/public/perumahan*' => self::api([]),
+            'api.test/api/public/tipe-rumah/1' => self::api(self::tipe(['perumahan' => self::perumahan(), 'kavling' => []])),
+        ]);
+
+        $this->get('/')->assertOk()->assertDontSee('file_ktp', false)->assertDontSee('Foto KTP');
+        $this->get('/property/1')->assertOk()->assertDontSee('file_ktp', false)->assertDontSee('Foto KTP');
     }
 
     public function test_interest_form_shows_api_validation_errors(): void

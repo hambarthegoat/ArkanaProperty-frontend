@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Services\ArkanaApi;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -54,6 +55,89 @@ class MarketingPagesTest extends TestCase
             ->assertSee('https://wa.me/6281234567890');
 
         Http::assertSent(fn (Request $r) => str_contains($r->url(), 'marketing/calendar') && $r['from'] === '2026-10-14' && $r['to'] === '2026-10-14');
+    }
+
+    public function test_dashboard_separates_the_queue_of_new_leads(): void
+    {
+        Http::fake([
+            'api.test/api/marketing/leads' => self::api([
+                self::lead(),
+                self::lead(['id' => 4, 'nama_calon' => 'Citra Baru', 'status_keseriusan' => 'pending', 'status_label' => 'Menunggu Validasi', 'id_marketing' => null, 'has_ktp' => false, 'prioritas' => null, 'prioritas_label' => null]),
+            ]),
+            'api.test/api/marketing/calendar*' => self::api([]),
+        ]);
+
+        $this->loginAs('marketing')->get('/marketing')
+            ->assertOk()
+            ->assertSee('Antrean Lead Baru')
+            ->assertSee('Citra Baru')
+            ->assertSee('Unggah KTP')
+            ->assertSee('data-lead-modal-ktp-form', false)
+            ->assertSee('ada 1 lead baru menunggu KTP');
+    }
+
+    public function test_dashboard_without_queue_hides_the_queue_section(): void
+    {
+        Http::fake([
+            'api.test/api/marketing/leads' => self::api([self::lead()]),
+            'api.test/api/marketing/calendar*' => self::api([]),
+        ]);
+
+        $this->loginAs('marketing')->get('/marketing')->assertOk()->assertDontSee('Antrean Lead Baru');
+    }
+
+    public function test_upload_ktp_posts_multipart_to_marketing_endpoint(): void
+    {
+        Http::fake(['api.test/api/marketing/leads/4/ktp' => self::api(self::lead(['id' => 4, 'nama_calon' => 'Citra Baru', 'has_ktp' => true]))]);
+
+        $this->loginAs('marketing')->from('/marketing')
+            ->post('/marketing/leads/4/ktp', ['file_ktp' => UploadedFile::fake()->image('ktp.jpg')])
+            ->assertRedirect('/marketing')
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'KTP Citra Baru'));
+
+        Http::assertSent(fn (Request $r) => $r->isMultipart()
+            && str_contains($r->url(), 'marketing/leads/4/ktp')
+            && collect($r->data())->contains(fn ($part) => $part['name'] === 'file_ktp'));
+    }
+
+    public function test_upload_ktp_validates_the_file_before_calling_the_api(): void
+    {
+        Http::fake();
+
+        $this->loginAs('marketing')->from('/marketing')
+            ->post('/marketing/leads/4/ktp', [])
+            ->assertRedirect('/marketing')
+            ->assertSessionHasErrors('file_ktp');
+
+        $this->loginAs('marketing')->from('/marketing')
+            ->post('/marketing/leads/4/ktp', ['file_ktp' => UploadedFile::fake()->create('x.exe', 10)])
+            ->assertSessionHasErrors('file_ktp');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_ktp_upload_is_marketing_only(): void
+    {
+        Http::fake();
+
+        $this->loginAs('admin')
+            ->post('/marketing/leads/4/ktp', ['file_ktp' => UploadedFile::fake()->image('ktp.jpg')])
+            ->assertRedirect(route('admin.dashboard'));
+
+        Http::assertNothingSent();
+    }
+
+    public function test_reports_page_excludes_queued_leads(): void
+    {
+        Http::fake([
+            'api.test/api/marketing/leads' => self::api([
+                self::lead(),
+                self::lead(['id' => 4, 'nama_calon' => 'Citra Baru', 'status_keseriusan' => 'pending', 'id_marketing' => null, 'kavling' => null]),
+            ]),
+            'api.test/api/marketing/reports' => self::api([]),
+        ]);
+
+        $this->loginAs('marketing')->get('/marketing/reports')->assertOk()->assertSee('Ahmad Rizky')->assertDontSee('Citra Baru');
     }
 
     public function test_update_lead_notes(): void

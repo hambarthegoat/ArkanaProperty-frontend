@@ -23,7 +23,6 @@ Route::prefix('admin')->name('admin.')->middleware('api.role:admin')->group(func
     Route::get('/leads', [Admin\LeadsController::class, 'index'])->name('leads');
     Route::post('/leads/{id}/validate', [Admin\LeadsController::class, 'validateLead'])->name('leads.validate');
     Route::post('/leads/{id}/reject', [Admin\LeadsController::class, 'reject'])->name('leads.reject');
-    Route::post('/leads/{id}/ktp', [Admin\LeadsController::class, 'uploadKtp'])->name('leads.ktp.upload');
     Route::get('/leads/{id}/ktp', [Admin\LeadsController::class, 'ktp'])->name('leads.ktp');
 
     Route::get('/kavling', [Admin\KavlingController::class, 'index'])->name('kavling');
@@ -40,6 +39,7 @@ Route::prefix('admin')->name('admin.')->middleware('api.role:admin')->group(func
 Route::prefix('marketing')->name('marketing.')->middleware('api.role:marketing')->group(function () {
     Route::get('/', Marketing\DashboardController::class)->name('dashboard');
     Route::patch('/leads/{id}', [Marketing\LeadController::class, 'update'])->name('leads.update');
+    Route::post('/leads/{id}/ktp', [Marketing\LeadController::class, 'uploadKtp'])->name('leads.ktp.upload');
     Route::get('/calendar', [Marketing\CalendarController::class, 'index'])->name('calendar');
     Route::post('/calendar', [Marketing\CalendarController::class, 'store'])->name('calendar.store');
     Route::get('/reports', [Marketing\ReportController::class, 'index'])->name('reports');
