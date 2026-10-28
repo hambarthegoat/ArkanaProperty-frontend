@@ -101,25 +101,63 @@ class AdminPagesTest extends TestCase
             ->assertSessionHasErrors(['api' => 'KTP belum diunggah.']);
     }
 
-    public function test_ktp_upload_and_download_proxy(): void
+    public function test_ktp_download_proxy_and_no_admin_upload(): void
     {
         Http::fake([
-            'api.test/api/admin/leads/3/ktp' => function (Request $r) {
-                return $r->method() === 'POST'
-                    ? self::api(self::lead(['has_ktp' => true]))
-                    : Http::response('JPEGDATA', 200, ['Content-Type' => 'image/jpeg']);
-            },
+            'api.test/api/admin/leads/3/ktp' => Http::response('JPEGDATA', 200, ['Content-Type' => 'image/jpeg']),
         ]);
-
-        $this->loginAs('admin')->from('/admin/leads')
-            ->post('/admin/leads/3/ktp', ['file_ktp' => UploadedFile::fake()->image('ktp.jpg')])
-            ->assertRedirect('/admin/leads')
-            ->assertSessionHas('success');
 
         $this->loginAs('admin')->get('/admin/leads/3/ktp')
             ->assertOk()
             ->assertHeader('Content-Type', 'image/jpeg')
             ->assertSee('JPEGDATA');
+
+        $this->loginAs('admin')
+            ->post('/admin/leads/3/ktp', ['file_ktp' => UploadedFile::fake()->image('ktp.jpg')])
+            ->assertStatus(405);
+    }
+
+    public function test_leads_page_has_no_ktp_upload_and_preselects_assigned_marketing(): void
+    {
+        Http::fake([
+            'api.test/api/admin/leads*' => self::api([self::lead(['id_marketing' => 2, 'has_ktp' => true, 'marketing' => ['id' => 2, 'nama' => 'Dimas Marketing']])]),
+            'api.test/api/admin/dashboard' => self::api(['leads' => ['total' => 1, 'pending' => 1, 'validated' => 0, 'rejected' => 0]]),
+            'api.test/api/admin/marketing' => self::api([['id' => 2, 'nama' => 'Dimas Marketing'], ['id' => 3, 'nama' => 'Rina']]),
+        ]);
+
+        $this->loginAs('admin')->get('/admin/leads')
+            ->assertOk()
+            ->assertSee('Lihat KTP')
+            ->assertDontSee('type="file"', false)
+            ->assertSee('<option value="2" selected>Dimas Marketing</option>', false)
+            ->assertSee('Rina')
+            ->assertDontSee('value="3" selected', false);
+    }
+
+    public function test_leads_page_tells_admin_ktp_comes_from_marketing(): void
+    {
+        Http::fake([
+            'api.test/api/admin/leads*' => self::api([self::lead()]),
+            'api.test/api/admin/dashboard' => self::api(['leads' => ['total' => 1, 'pending' => 1, 'validated' => 0, 'rejected' => 0]]),
+            'api.test/api/admin/marketing' => self::api([]),
+        ]);
+
+        $this->loginAs('admin')->get('/admin/leads')->assertOk()->assertSee('KTP diunggah oleh marketing');
+    }
+
+    public function test_validate_without_marketing_param_lets_api_use_the_ktp_uploader(): void
+    {
+        Http::fake(['api.test/api/admin/leads/3/validate' => self::api([
+            'lead' => self::lead(['status_keseriusan' => 'validated', 'marketing' => ['nama' => 'Dimas']]),
+            'kredensial' => ['username' => '081122334455', 'password' => null, 'akun_baru' => false],
+        ])]);
+
+        $this->loginAs('admin')->from('/admin/leads')
+            ->post('/admin/leads/3/validate', [])
+            ->assertRedirect('/admin/leads')
+            ->assertSessionHas('success');
+
+        Http::assertSent(fn (Request $r) => $r['is_valid'] === true && ! isset($r['id_marketing']));
     }
 
     public function test_kavling_page_and_status_update(): void

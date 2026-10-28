@@ -129,12 +129,9 @@
                                             <a href="{{ route('admin.leads.ktp', $lead['id']) }}" target="_blank" class="inline-flex items-center gap-2 text-sm font-bold text-accent hover:underline">
                                                 <i data-lucide="file-image" class="size-4"></i> Lihat KTP
                                             </a>
+                                        @else
+                                            <p class="text-sm text-primary/50">Belum diunggah. KTP diunggah oleh marketing.</p>
                                         @endif
-                                        <form method="POST" action="{{ route('admin.leads.ktp.upload', $lead['id']) }}" enctype="multipart/form-data" class="flex gap-2 items-center">
-                                            @csrf
-                                            <input type="file" name="file_ktp" accept=".jpg,.jpeg,.png,.pdf" required class="text-xs w-full file:mr-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1 file:font-bold" />
-                                            <button type="submit" class="px-3 py-2 bg-white border border-border-subtle rounded-lg text-xs font-bold hover:border-accent shrink-0">{{ $lead['has_ktp'] ? 'Ganti' : 'Unggah' }}</button>
-                                        </form>
                                     </div>
 
                                     <div class="space-y-3">
@@ -145,10 +142,10 @@
                                                 <select name="id_marketing" required class="w-full bg-white border border-border-subtle rounded-lg px-3 py-2 text-xs font-bold">
                                                     <option value="">Pilih marketing</option>
                                                     @foreach ($marketing as $m)
-                                                        <option value="{{ $m['id'] }}">{{ $m['nama'] }}</option>
+                                                        <option value="{{ $m['id'] }}" @selected(($lead['id_marketing'] ?? null) === $m['id'])>{{ $m['nama'] }}</option>
                                                     @endforeach
                                                 </select>
-                                                <button type="submit" class="px-3 py-2 bg-emerald-custom text-white rounded-lg text-xs font-bold shrink-0" @disabled(! $lead['has_ktp']) title="{{ $lead['has_ktp'] ? '' : 'Unggah KTP terlebih dahulu' }}">Validasi</button>
+                                                <button type="submit" class="px-3 py-2 bg-emerald-custom text-white rounded-lg text-xs font-bold shrink-0" @disabled(! $lead['has_ktp']) title="{{ $lead['has_ktp'] ? '' : 'Menunggu marketing mengunggah KTP' }}">Validasi</button>
                                             </form>
                                             @if ($lead['status_keseriusan'] === 'pending')
                                                 <form method="POST" action="{{ route('admin.leads.reject', $lead['id']) }}" onsubmit="return confirm('Tolak lead ini?')">

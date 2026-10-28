@@ -326,7 +326,7 @@
                         <p class="text-primary/60 text-sm">Isi data di bawah ini, Marketing kami akan segera menghubungi Anda melalui WhatsApp.</p>
                     </div>
 
-                    <form method="POST" action="{{ route('leads.store') }}" enctype="multipart/form-data" class="space-y-4" data-lead-form>
+                    <form method="POST" action="{{ route('leads.store') }}" class="space-y-4" data-lead-form>
                         @csrf
                         <input type="hidden" name="id_tipe" value="{{ old('id_tipe') }}" data-lead-tipe />
                         @if ($errors->any())
@@ -359,12 +359,6 @@
                         <div class="space-y-1">
                             <label for="lead-pesan" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Pesan Tambahan</label>
                             <textarea id="lead-pesan" name="pesan" class="w-full bg-white border border-border-subtle rounded-xl py-3 px-4 focus:ring-2 focus:ring-accent outline-none font-medium min-h-[80px]" placeholder="Ingin tanya jadwal survey lokasi...">{{ old('pesan') }}</textarea>
-                        </div>
-
-                        <div class="space-y-1">
-                            <label for="lead-ktp" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Foto KTP (opsional)</label>
-                            <input id="lead-ktp" name="file_ktp" type="file" accept=".jpg,.jpeg,.png,.pdf" class="w-full bg-white border border-border-subtle rounded-xl py-2 px-4 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-surface-soft file:px-3 file:py-1 file:font-bold file:text-primary" />
-                            <p class="text-[10px] text-primary/40 px-2">JPG/PNG/PDF maks 5MB. Mempercepat verifikasi oleh tim kami.</p>
                         </div>
 
                         <button type="submit" class="w-full btn-primary py-4 flex items-center justify-center gap-2">
