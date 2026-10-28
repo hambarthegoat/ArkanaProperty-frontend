@@ -79,14 +79,15 @@
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
-                        <i data-lucide="wallet" class="size-3.5 text-accent"></i> Kisaran Budget (Rp)
+                    <label for="filter-budget" class="text-xs font-bold text-primary/40 uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="wallet" class="size-3.5 text-accent"></i> Kisaran Budget
                     </label>
-                    <div class="flex items-center gap-2">
-                        <input type="number" name="min_budget" min="0" step="1000000" value="{{ $filters['min_budget'] ?? '' }}" placeholder="Min" aria-label="Budget minimum" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold text-sm outline-none" />
-                        <span class="text-primary/20">-</span>
-                        <input type="number" name="max_budget" min="0" step="1000000" value="{{ $filters['max_budget'] ?? '' }}" placeholder="Max" aria-label="Budget maksimum" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold text-sm outline-none" />
-                    </div>
+                    <select id="filter-budget" name="budget" class="w-full bg-surface-soft border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-accent outline-none">
+                        <option value="">Semua Budget</option>
+                        @foreach ($budgetOptions as $value => $label)
+                            <option value="{{ $value }}" @selected(($filters['budget'] ?? '') === (string) $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="space-y-2">

@@ -65,6 +65,55 @@ class PublicPagesTest extends TestCase
             && ! isset($r['min_budget']));
     }
 
+    public function test_budget_is_a_dropdown_with_ranges(): void
+    {
+        $this->fakeCatalog();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('id="filter-budget"', false)
+            ->assertSee('Semua Budget')
+            ->assertSee('Rp 200 - 300 juta')
+            ->assertSee('≥ Rp 500 juta')
+            ->assertDontSee('name="min_budget"', false)
+            ->assertDontSee('name="max_budget"', false);
+    }
+
+    public function test_selected_budget_range_is_kept_and_sent_as_min_and_max(): void
+    {
+        $this->fakeCatalog();
+
+        $this->get('/?budget=200000000-300000000')
+            ->assertOk()
+            ->assertSee('<option value="200000000-300000000" selected>', false);
+
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), 'public/perumahan')
+            && $r['min_budget'] === '200000000'
+            && $r['max_budget'] === '300000000'
+            && ! isset($r['budget']));
+    }
+
+    public function test_open_ended_budget_ranges_send_only_one_bound(): void
+    {
+        $this->fakeCatalog();
+
+        $this->get('/?budget=0-200000000')->assertOk();
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), 'public/perumahan') && ($r['max_budget'] ?? null) === '200000000' && ! isset($r['min_budget']));
+
+        $this->get('/?budget=500000000-')->assertOk();
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), 'public/perumahan') && ($r['min_budget'] ?? null) === '500000000' && ! isset($r['max_budget']));
+    }
+
+    public function test_unknown_budget_value_is_ignored(): void
+    {
+        $this->fakeCatalog();
+
+        $this->get('/?budget=1-2')->assertOk()->assertDontSee('selected>Semua', false);
+
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), 'public/perumahan')
+            && ! isset($r['min_budget']) && ! isset($r['max_budget']) && ! isset($r['budget']));
+    }
+
     public function test_landing_survives_api_outage(): void
     {
         Http::fake(['api.test/*' => fn () => throw new ConnectionException('down')]);
