@@ -21,6 +21,7 @@ Route::prefix('admin')->name('admin.')->middleware('api.role:admin')->group(func
     Route::get('/', Admin\DashboardController::class)->name('dashboard');
 
     Route::get('/leads', [Admin\LeadsController::class, 'index'])->name('leads');
+    Route::post('/leads/{id}/assign', [Admin\LeadsController::class, 'assign'])->name('leads.assign');
     Route::post('/leads/{id}/validate', [Admin\LeadsController::class, 'validateLead'])->name('leads.validate');
     Route::post('/leads/{id}/reject', [Admin\LeadsController::class, 'reject'])->name('leads.reject');
     Route::get('/leads/{id}/ktp', [Admin\LeadsController::class, 'ktp'])->name('leads.ktp');

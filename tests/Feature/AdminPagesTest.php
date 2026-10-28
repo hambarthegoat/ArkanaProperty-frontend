@@ -134,6 +134,45 @@ class AdminPagesTest extends TestCase
             ->assertDontSee('value="3" selected', false);
     }
 
+    public function test_assign_marketing_posts_to_api_and_flashes_message(): void
+    {
+        Http::fake(['api.test/api/admin/leads/3/assign' => self::api(self::lead(['id_marketing' => 2, 'marketing' => ['id' => 2, 'nama' => 'Dimas']]))]);
+
+        $this->loginAs('admin')->from('/admin/leads')
+            ->post('/admin/leads/3/assign', ['id_marketing' => 2])
+            ->assertRedirect('/admin/leads')
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'ditugaskan ke Dimas'));
+
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), 'admin/leads/3/assign') && $r['id_marketing'] === 2);
+    }
+
+    public function test_assign_requires_a_marketing_and_shows_api_errors(): void
+    {
+        Http::fake(['api.test/api/admin/leads/3/assign' => self::api(null, 422, 'Lead yang sudah divalidasi tidak bisa ditugaskan ulang.')]);
+
+        $this->loginAs('admin')->from('/admin/leads')->post('/admin/leads/3/assign', [])->assertSessionHasErrors('id_marketing');
+
+        $this->loginAs('admin')->from('/admin/leads')
+            ->post('/admin/leads/3/assign', ['id_marketing' => 2])
+            ->assertSessionHasErrors(['api' => 'Lead yang sudah divalidasi tidak bisa ditugaskan ulang.']);
+    }
+
+    public function test_leads_page_guides_admin_through_assign_then_validate(): void
+    {
+        Http::fake([
+            'api.test/api/admin/leads*' => self::api([self::lead(['id' => 3]), self::lead(['id' => 4, 'nama_calon' => 'Siti', 'id_marketing' => 2, 'has_ktp' => false, 'marketing' => ['id' => 2, 'nama' => 'Dimas Marketing']])]),
+            'api.test/api/admin/dashboard' => self::api(['leads' => ['total' => 2, 'pending' => 2, 'validated' => 0, 'rejected' => 0]]),
+            'api.test/api/admin/marketing' => self::api([['id' => 2, 'nama' => 'Dimas Marketing']]),
+        ]);
+
+        $this->loginAs('admin')->get('/admin/leads')
+            ->assertOk()
+            ->assertSee('Tugaskan Marketing')
+            ->assertSee(route('admin.leads.assign', 3), false)
+            ->assertSee('Tugaskan marketing terlebih dahulu')
+            ->assertSee('Menunggu marketing mengunggah KTP');
+    }
+
     public function test_leads_page_tells_admin_ktp_comes_from_marketing(): void
     {
         Http::fake([

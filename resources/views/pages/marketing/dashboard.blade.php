@@ -99,7 +99,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-black text-primary">Leads Saya</h1>
-            <p class="text-primary/60">Semangat! Anda menangani {{ count($assignedLeads) }} lead, ada {{ count($queuedLeads) }} lead baru menunggu KTP, dan {{ count($schedule) }} jadwal hari ini.</p>
+            <p class="text-primary/60">Semangat! Anda menangani {{ count($assignedLeads) }} lead, {{ $assignedLeads->where('needs_ktp', true)->count() }} menunggu KTP, dan {{ count($schedule) }} jadwal hari ini.</p>
         </div>
         <a href="{{ route('marketing.calendar') }}" class="btn-primary !py-2 !px-4 text-xs flex items-center gap-2">
             <i data-lucide="plus" class="size-4"></i> Buat Agenda
@@ -109,34 +109,6 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {{-- Assigned Leads Section --}}
         <div class="lg:col-span-2 space-y-6">
-            @if (count($queuedLeads))
-                <div class="space-y-3" data-lead-queue>
-                    <h2 class="text-xs font-black text-primary/50 uppercase tracking-widest">Antrean Lead Baru · unggah KTP untuk mengambil lead</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @foreach ($queuedLeads as $lead)
-                            <div class="bg-white p-6 rounded-3xl border border-dashed border-accent shadow-sm flex flex-col justify-between">
-                                <div>
-                                    <div class="flex justify-between items-start mb-4">
-                                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-accent/10 text-accent">Antrean Baru</span>
-                                        <span class="text-[9px] font-bold text-primary/40 uppercase">{{ $lead['last_update'] }}</span>
-                                    </div>
-                                    <h3 class="font-bold text-lg text-primary">{{ $lead['name'] }}</h3>
-                                    <p class="text-xs text-primary/40 mb-4">{{ $lead['property'] }}</p>
-                                </div>
-                                <div class="flex gap-2 pt-4 border-t border-border-subtle">
-                                    <button type="button" class="flex-grow py-2 bg-primary text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-accent transition-colors" data-open-lead='@json($lead)'>
-                                        <i data-lucide="upload" class="size-3.5"></i> Unggah KTP
-                                    </button>
-                                    <a href="https://wa.me/{{ $lead['wa'] }}" target="_blank" rel="noopener" class="flex-grow py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-colors">
-                                        <i data-lucide="message-square" class="size-3.5"></i> WhatsApp
-                                    </a>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @forelse ($assignedLeads as $lead)
                     <div class="bg-white p-6 rounded-3xl border border-border-subtle shadow-sm flex flex-col justify-between hover:scale-[1.02] transition-transform">
@@ -147,6 +119,9 @@
                                 </span>
                                 <span class="text-[9px] font-bold text-primary/40 uppercase">{{ $lead['status'] }}</span>
                             </div>
+                            @if ($lead['needs_ktp'])
+                                <span class="inline-block mb-2 px-2 py-0.5 rounded text-[9px] font-black uppercase bg-accent/10 text-accent">Menunggu KTP</span>
+                            @endif
                             <h3 class="font-bold text-lg text-primary">{{ $lead['name'] }}</h3>
                             <p class="text-xs text-primary/40 mb-4">{{ $lead['property'] }}</p>
                         </div>
@@ -157,7 +132,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <button type="button" class="flex-grow py-2 bg-surface-soft text-primary rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all group" data-open-lead='@json($lead)'>
-                                    <i data-lucide="external-link" class="size-3.5 group-hover:scale-110 transition-transform"></i> Detail
+                                    <i data-lucide="{{ $lead['needs_ktp'] ? 'upload' : 'external-link' }}" class="size-3.5 group-hover:scale-110 transition-transform"></i> {{ $lead['needs_ktp'] ? 'Unggah KTP' : 'Detail' }}
                                 </button>
                                 <a href="https://wa.me/{{ $lead['wa'] }}" target="_blank" rel="noopener" class="flex-grow py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-colors">
                                     <i data-lucide="message-square" class="size-3.5"></i> WhatsApp
@@ -270,7 +245,7 @@
         function openModal(lead) {
             q('[data-lead-modal-initials]').textContent = lead.initials;
             q('[data-lead-modal-name]').textContent = lead.name;
-            q('[data-lead-modal-priority]').textContent = lead.queued ? 'Antrean Baru' : 'Prioritas ' + lead.priority_label;
+            q('[data-lead-modal-priority]').textContent = 'Prioritas ' + lead.priority_label;
             q('[data-lead-modal-priority]').className = 'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ' + (priorityClasses[lead.priority] || 'bg-slate-100 text-slate-400');
             q('[data-lead-modal-status]').textContent = lead.status;
             q('[data-lead-modal-property]').textContent = lead.property || '-';
@@ -280,7 +255,6 @@
             q('[data-lead-modal-notes]').value = lead.notes || '';
             q('[data-lead-modal-priority-input]').value = lead.priority || '';
             q('[data-lead-modal-form]').action = updateBase + '/' + lead.id;
-            q('[data-lead-modal-form]').classList.toggle('hidden', !!lead.queued);
             q('[data-lead-modal-ktp-form]').action = updateBase + '/' + lead.id + '/ktp';
             q('[data-lead-modal-ktp-form]').reset();
             q('[data-lead-modal-ktp-button]').textContent = lead.has_ktp ? 'Ganti' : 'Unggah';
