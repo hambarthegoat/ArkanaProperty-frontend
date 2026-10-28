@@ -19,8 +19,7 @@ class LeadController extends Controller
     }
 
     /**
-     * KTP is collected by marketing. Uploading to a lead from the queue
-     * claims it for the logged-in marketing.
+     * KTP is collected by the marketing the admin assigned the lead to.
      */
     public function uploadKtp(Request $request, ArkanaApi $api, int $id)
     {

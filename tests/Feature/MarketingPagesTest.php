@@ -57,35 +57,6 @@ class MarketingPagesTest extends TestCase
         Http::assertSent(fn (Request $r) => str_contains($r->url(), 'marketing/calendar') && $r['from'] === '2026-10-14' && $r['to'] === '2026-10-14');
     }
 
-    public function test_dashboard_separates_the_queue_of_new_leads(): void
-    {
-        Http::fake([
-            'api.test/api/marketing/leads' => self::api([
-                self::lead(),
-                self::lead(['id' => 4, 'nama_calon' => 'Citra Baru', 'status_keseriusan' => 'pending', 'status_label' => 'Menunggu Validasi', 'id_marketing' => null, 'has_ktp' => false, 'prioritas' => null, 'prioritas_label' => null]),
-            ]),
-            'api.test/api/marketing/calendar*' => self::api([]),
-        ]);
-
-        $this->loginAs('marketing')->get('/marketing')
-            ->assertOk()
-            ->assertSee('Antrean Lead Baru')
-            ->assertSee('Citra Baru')
-            ->assertSee('Unggah KTP')
-            ->assertSee('data-lead-modal-ktp-form', false)
-            ->assertSee('ada 1 lead baru menunggu KTP');
-    }
-
-    public function test_dashboard_without_queue_hides_the_queue_section(): void
-    {
-        Http::fake([
-            'api.test/api/marketing/leads' => self::api([self::lead()]),
-            'api.test/api/marketing/calendar*' => self::api([]),
-        ]);
-
-        $this->loginAs('marketing')->get('/marketing')->assertOk()->assertDontSee('Antrean Lead Baru');
-    }
-
     public function test_upload_ktp_posts_multipart_to_marketing_endpoint(): void
     {
         Http::fake(['api.test/api/marketing/leads/4/ktp' => self::api(self::lead(['id' => 4, 'nama_calon' => 'Citra Baru', 'has_ktp' => true]))]);
@@ -127,17 +98,34 @@ class MarketingPagesTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_reports_page_excludes_queued_leads(): void
+    public function test_dashboard_flags_assigned_leads_waiting_for_ktp(): void
     {
         Http::fake([
             'api.test/api/marketing/leads' => self::api([
-                self::lead(),
-                self::lead(['id' => 4, 'nama_calon' => 'Citra Baru', 'status_keseriusan' => 'pending', 'id_marketing' => null, 'kavling' => null]),
+                self::lead(['has_ktp' => true]),
+                self::lead(['id' => 4, 'nama_calon' => 'Citra Baru', 'status_keseriusan' => 'pending', 'status_label' => 'Menunggu Validasi', 'id_marketing' => 2, 'has_ktp' => false, 'prioritas' => null, 'prioritas_label' => null]),
             ]),
-            'api.test/api/marketing/reports' => self::api([]),
+            'api.test/api/marketing/calendar*' => self::api([]),
         ]);
 
-        $this->loginAs('marketing')->get('/marketing/reports')->assertOk()->assertSee('Ahmad Rizky')->assertDontSee('Citra Baru');
+        $this->loginAs('marketing')->get('/marketing')
+            ->assertOk()
+            ->assertSee('Citra Baru')
+            ->assertSee('Menunggu KTP')
+            ->assertSee('Unggah KTP')
+            ->assertSee('data-lead-modal-ktp-form', false)
+            ->assertSee('1 menunggu KTP')
+            ->assertDontSee('Antrean');
+    }
+
+    public function test_dashboard_has_no_ktp_prompt_when_every_lead_has_ktp(): void
+    {
+        Http::fake([
+            'api.test/api/marketing/leads' => self::api([self::lead(['has_ktp' => true])]),
+            'api.test/api/marketing/calendar*' => self::api([]),
+        ]);
+
+        $this->loginAs('marketing')->get('/marketing')->assertOk()->assertDontSee('Menunggu KTP')->assertSee('0 menunggu KTP');
     }
 
     public function test_update_lead_notes(): void
