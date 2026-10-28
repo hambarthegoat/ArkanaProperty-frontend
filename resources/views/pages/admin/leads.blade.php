@@ -136,16 +136,28 @@
 
                                     <div class="space-y-3">
                                         @if ($lead['status_keseriusan'] !== 'validated')
-                                            <p class="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Validasi & Tugaskan Marketing</p>
-                                            <form method="POST" action="{{ route('admin.leads.validate', $lead['id']) }}" class="flex gap-2">
+                                            @if ($lead['status_keseriusan'] === 'pending')
+                                                <p class="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Tugaskan Marketing</p>
+                                                <form method="POST" action="{{ route('admin.leads.assign', $lead['id']) }}" class="flex gap-2">
+                                                    @csrf
+                                                    <select name="id_marketing" required class="w-full bg-white border border-border-subtle rounded-lg px-3 py-2 text-xs font-bold">
+                                                        <option value="">Pilih marketing</option>
+                                                        @foreach ($marketing as $m)
+                                                            <option value="{{ $m['id'] }}" @selected(($lead['id_marketing'] ?? null) === $m['id'])>{{ $m['nama'] }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <button type="submit" class="px-3 py-2 bg-white border border-border-subtle rounded-lg text-xs font-bold hover:border-accent shrink-0">{{ ($lead['id_marketing'] ?? null) ? 'Ubah' : 'Tugaskan' }}</button>
+                                                </form>
+                                            @endif
+                                            <p class="text-[10px] font-bold text-primary/40 uppercase tracking-widest pt-1">Validasi</p>
+                                            <form method="POST" action="{{ route('admin.leads.validate', $lead['id']) }}" class="flex gap-2 items-center">
                                                 @csrf
-                                                <select name="id_marketing" required class="w-full bg-white border border-border-subtle rounded-lg px-3 py-2 text-xs font-bold">
-                                                    <option value="">Pilih marketing</option>
-                                                    @foreach ($marketing as $m)
-                                                        <option value="{{ $m['id'] }}" @selected(($lead['id_marketing'] ?? null) === $m['id'])>{{ $m['nama'] }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <button type="submit" class="px-3 py-2 bg-emerald-custom text-white rounded-lg text-xs font-bold shrink-0" @disabled(! $lead['has_ktp']) title="{{ $lead['has_ktp'] ? '' : 'Menunggu marketing mengunggah KTP' }}">Validasi</button>
+                                                <button type="submit" class="px-3 py-2 bg-emerald-custom text-white rounded-lg text-xs font-bold shrink-0" @disabled(! $lead['has_ktp'] || ! ($lead['id_marketing'] ?? null))>Validasi</button>
+                                                @if (! ($lead['id_marketing'] ?? null))
+                                                    <span class="text-[10px] text-orange-500 font-bold">Tugaskan marketing terlebih dahulu</span>
+                                                @elseif (! $lead['has_ktp'])
+                                                    <span class="text-[10px] text-orange-500 font-bold">Menunggu marketing mengunggah KTP</span>
+                                                @endif
                                             </form>
                                             @if ($lead['status_keseriusan'] === 'pending')
                                                 <form method="POST" action="{{ route('admin.leads.reject', $lead['id']) }}" onsubmit="return confirm('Tolak lead ini?')">

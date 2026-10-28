@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Marketing;
 use App\Http\Controllers\Controller;
 use App\Services\ArkanaApi;
 use App\Support\Format;
-use App\Support\LeadQueue;
 
 class DashboardController extends Controller
 {
@@ -13,12 +12,10 @@ class DashboardController extends Controller
     {
         $today = now()->toDateString();
 
-        $all = collect($api->get('marketing/leads'));
-
-        $leads = $all->map(fn ($lead) => [
+        $leads = collect($api->get('marketing/leads'))->map(fn ($lead) => [
             'id' => $lead['id'],
-            'queued' => LeadQueue::isQueued($lead),
             'has_ktp' => (bool) ($lead['has_ktp'] ?? false),
+            'needs_ktp' => ! ($lead['has_ktp'] ?? false) && ($lead['status_keseriusan'] ?? null) !== 'rejected',
             'name' => $lead['nama_calon'],
             'initials' => Format::initials($lead['nama_calon']),
             'phone' => $lead['no_telp'],
@@ -34,8 +31,7 @@ class DashboardController extends Controller
         ]);
 
         return view('pages.marketing.dashboard', [
-            'assignedLeads' => $leads->reject(fn ($lead) => $lead['queued'])->values(),
-            'queuedLeads' => $leads->filter(fn ($lead) => $lead['queued'])->values(),
+            'assignedLeads' => $leads,
             'schedule' => $api->get('marketing/calendar', ['from' => $today, 'to' => $today]),
             'activities' => ReportController::ACTIVITIES,
         ]);

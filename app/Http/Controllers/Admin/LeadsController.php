@@ -22,6 +22,17 @@ class LeadsController extends Controller
         ]);
     }
 
+    public function assign(Request $request, int $id)
+    {
+        $request->validate(['id_marketing' => 'required|integer']);
+
+        $lead = $this->api->post("admin/leads/{$id}/assign", [
+            'id_marketing' => (int) $request->input('id_marketing'),
+        ]);
+
+        return back()->with('success', "Lead {$lead['nama_calon']} ditugaskan ke {$lead['marketing']['nama']}. Marketing akan mengunggah KTP.");
+    }
+
     public function validateLead(Request $request, int $id)
     {
         $request->validate(['id_marketing' => 'nullable|integer']);
