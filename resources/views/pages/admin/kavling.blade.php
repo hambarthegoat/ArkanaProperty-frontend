@@ -6,6 +6,7 @@
 <div class="space-y-8 relative" data-kavling
      data-projects='@json($projects)'
      data-blocks='@json($blocks)'
+     data-block-meta='@json($blockMeta)'
      data-house-types='@json($houseTypes)'
      data-kavling-data='@json($kavlingData)'
      data-initial-project="{{ $initialProject }}"
@@ -86,11 +87,32 @@
             <a href="{{ config('services.arkana_api.admin_panel_url') }}/kavling" class="flex items-center gap-2 px-4 py-2 bg-white border border-border-subtle rounded-xl font-bold text-xs hover:border-accent transition-colors">
                 <i data-lucide="maximize-2" class="size-4"></i> Buka di Admin Panel
             </a>
+            <button type="button" class="flex items-center gap-2 px-4 py-2 bg-white border border-border-subtle rounded-xl font-bold text-xs hover:border-accent transition-colors" data-toggle-blok>
+                <i data-lucide="layout-grid" class="size-4"></i> Buat Blok
+            </button>
             <button type="button" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all" data-toggle-create>
-                <i data-lucide="plus" class="size-4"></i> Tambah Kavling
+                <i data-lucide="plus" class="size-4"></i> Tambah Rumah
             </button>
         </div>
     </div>
+
+    <form method="POST" action="{{ route('admin.blok.store') }}" class="{{ old('nama') !== null ? '' : 'hidden' }} bg-white rounded-[32px] border border-border-subtle shadow-sm p-6 grid grid-cols-1 md:grid-cols-4 gap-3 items-end" data-blok-form>
+        @csrf
+        <div class="md:col-span-2 space-y-1">
+            <label for="blok-perumahan" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Perumahan</label>
+            <select id="blok-perumahan" name="id_perumahan" required class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none">
+                @foreach ($projects as $p)
+                    <option value="{{ $p['id'] }}" @selected((int) old('id_perumahan', $initialProject) === $p['id'])>{{ $p['name'] }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label for="blok-nama" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Nama Blok</label>
+            <input id="blok-nama" name="nama" value="{{ old('nama') }}" required maxlength="50" placeholder="Blok C" class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none" />
+        </div>
+        <button type="submit" class="btn-primary">Buat Blok</button>
+        <p class="md:col-span-4 text-[10px] text-primary/40 px-2">Blok dibuat kosong lebih dulu. Satu blok bisa berisi banyak rumah; tambahkan lewat tombol Tambah Rumah.</p>
+    </form>
 
     <form method="POST" action="{{ route('admin.kavling.store') }}" class="{{ $errors->any() ? '' : 'hidden' }} bg-white rounded-[32px] border border-border-subtle shadow-sm p-6 grid grid-cols-1 md:grid-cols-6 gap-3 items-end" data-create-form>
         @csrf
@@ -98,13 +120,15 @@
             <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Perumahan / Tipe</label>
             <select name="id_tipe" required class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none">
                 @foreach ($tipeOptions as $tipe)
-                    <option value="{{ $tipe['id'] }}" @selected((int) old('id_tipe') === $tipe['id'])>{{ $tipe['label'] }}</option>
+                    <option value="{{ $tipe['id'] }}" data-project="{{ $tipe['project'] }}" @selected((int) old('id_tipe', $defaultTipe) === $tipe['id'])>{{ $tipe['label'] }}</option>
                 @endforeach
             </select>
         </div>
         <div class="space-y-1">
             <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Blok</label>
-            <input name="blok" value="{{ old('blok') }}" placeholder="Blok A" class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none" />
+            <select name="blok" class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none" data-house-blok data-selected="{{ old('blok') }}">
+                <option value="">Tanpa blok</option>
+            </select>
         </div>
         <div class="space-y-1">
             <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Nomor</label>
@@ -115,7 +139,13 @@
             <input id="jumlah-rumah" name="jumlah_rumah" type="number" min="1" max="20" value="{{ old('jumlah_rumah', 1) }}" class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none" />
         </div>
         <button type="submit" class="btn-primary">Tambah</button>
-        <p class="md:col-span-6 text-[10px] text-primary/40 px-2">Satu kavling bisa berisi lebih dari satu rumah. Isi jumlah rumah untuk membuat beberapa rumah sekaligus (Rumah 1, 2, 3...); tiap rumah punya status dan pembeli sendiri. Mengisi kavling yang sudah ada menambah rumah baru.</p>
+        <p class="md:col-span-6 text-[10px] text-primary/40 px-2">Pilih blok yang sudah dibuat; satu blok bisa berisi banyak rumah. Satu kavling juga bisa berisi lebih dari satu rumah. Isi jumlah rumah untuk membuat beberapa rumah sekaligus (Rumah 1, 2, 3...); tiap rumah punya status dan pembeli sendiri. Mengisi kavling yang sudah ada menambah rumah baru.</p>
+    </form>
+
+    <form method="POST" action="#" class="hidden" data-delete-block-form>
+        @csrf
+        @method('DELETE')
+        <input type="hidden" name="perumahan" value="" />
     </form>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -203,6 +233,8 @@
 
         var projects = JSON.parse(root.getAttribute('data-projects'));
         var blocks = JSON.parse(root.getAttribute('data-blocks'));
+        var blockMeta = JSON.parse(root.getAttribute('data-block-meta'));
+        var blockOptions = @json($blockOptions);
         var houseTypes = JSON.parse(root.getAttribute('data-house-types'));
         var kavlingData = JSON.parse(root.getAttribute('data-kavling-data'));
         var updateUrl = root.getAttribute('data-update-url');
@@ -216,6 +248,32 @@
         root.querySelectorAll('[data-toggle-create]').forEach(function (btn) {
             btn.addEventListener('click', function () { createForm.classList.toggle('hidden'); });
         });
+
+        var blokForm = root.querySelector('[data-blok-form]');
+        root.querySelectorAll('[data-toggle-blok]').forEach(function (btn) {
+            btn.addEventListener('click', function () { blokForm.classList.toggle('hidden'); });
+        });
+
+        // The block dropdown of the house form follows the chosen project.
+        var tipeSelect = createForm.querySelector('[name=id_tipe]');
+        var houseBlok = createForm.querySelector('[data-house-blok]');
+        function fillHouseBlocks() {
+            var option = tipeSelect.options[tipeSelect.selectedIndex];
+            var project = option ? option.getAttribute('data-project') : null;
+            var keep = houseBlok.value || houseBlok.getAttribute('data-selected') || '';
+            houseBlok.innerHTML = '<option value="">Tanpa blok</option>';
+            ((project && blockOptions[project]) || []).forEach(function (name) {
+                var o = document.createElement('option');
+                o.value = name;
+                o.textContent = name;
+                if (name === keep) o.selected = true;
+                houseBlok.appendChild(o);
+            });
+        }
+        tipeSelect.addEventListener('change', function () { houseBlok.setAttribute('data-selected', ''); fillHouseBlocks(); });
+        fillHouseBlocks();
+
+        var deleteBlockForm = root.querySelector('[data-delete-block-form]');
 
         var projectSelect = root.querySelector('[data-project-select]');
         var blockList = root.querySelector('[data-block-list]');
@@ -242,18 +300,41 @@
         function renderBlocks() {
             blockList.innerHTML = '';
             var list = blocks[state.project] || [];
+            var meta = blockMeta[state.project] || {};
             if (!list.length) {
-                blockList.innerHTML = '<p class="text-xs text-primary/40">Belum ada kavling.</p>';
+                blockList.innerHTML = '<p class="text-xs text-primary/40">Belum ada blok.</p>';
                 return;
             }
             list.forEach(function (block) {
                 var active = state.block === block;
+                var info = meta[block];
+                var row = document.createElement('div');
+                row.className = 'flex items-center gap-2';
                 var btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'w-full flex items-center justify-between p-4 rounded-2xl font-bold transition-all ' + (active ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-surface-soft text-primary/60 hover:bg-border-subtle');
-                btn.innerHTML = '<span class="text-xs">' + esc(block) + '</span><i data-lucide="chevron-right" class="size-3.5 ' + (active ? 'opacity-100' : 'opacity-0') + '"></i>';
+                btn.className = 'flex-grow flex items-center justify-between p-4 rounded-2xl font-bold transition-all ' + (active ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-surface-soft text-primary/60 hover:bg-border-subtle');
+                btn.innerHTML = '<span class="text-xs">' + esc(block) + '</span>' +
+                    '<span class="text-[9px] ' + (active ? 'text-white/60' : 'text-primary/30') + '">' + (info ? info.count + ' rumah' : '') + '</span>';
                 btn.addEventListener('click', function () { state.block = block; renderAll(); });
-                blockList.appendChild(btn);
+                row.appendChild(btn);
+
+                // only an empty block can be deleted
+                if (info && info.count === 0) {
+                    var del = document.createElement('button');
+                    del.type = 'button';
+                    del.title = 'Hapus blok kosong';
+                    del.setAttribute('data-delete-block', info.id);
+                    del.className = 'p-2 rounded-xl text-red-400 hover:bg-red-50 transition-colors';
+                    del.innerHTML = '<i data-lucide="trash-2" class="size-4"></i>';
+                    del.addEventListener('click', function () {
+                        if (!confirm('Hapus ' + block + '?')) return;
+                        deleteBlockForm.action = @json(url('admin/blok')) + '/' + info.id;
+                        deleteBlockForm.querySelector('[name=perumahan]').value = state.project;
+                        deleteBlockForm.submit();
+                    });
+                    row.appendChild(del);
+                }
+                blockList.appendChild(row);
             });
         }
 
@@ -355,6 +436,12 @@
 
         projectSelect.addEventListener('change', function () {
             state.project = parseInt(projectSelect.value, 10);
+
+            // the add forms follow the project being viewed
+            var firstTipe = Array.prototype.find.call(tipeSelect.options, function (o) { return o.getAttribute('data-project') === String(state.project); });
+            if (firstTipe) { tipeSelect.value = firstTipe.value; houseBlok.setAttribute('data-selected', ''); houseBlok.value = ''; fillHouseBlocks(); }
+            var blokProject = blokForm.querySelector('[name=id_perumahan]');
+            if (blokProject) blokProject.value = String(state.project);
             state.block = (blocks[state.project] || [])[0];
             state.type = 'All';
             renderAll();
