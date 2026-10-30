@@ -24,7 +24,7 @@
             <p class="text-primary/60">
                 Selamat datang di portal Arkanaproperty.
                 @if ($kavling)
-                    Unit Anda di <span class="font-bold text-accent">{{ $kavling['blok'] ? $kavling['blok'].' · ' : '' }}{{ $kavling['nomor_kavling'] }}</span> berstatus {{ strtolower($kavling['status_label']) }}.
+                    Unit Anda di <span class="font-bold text-accent">{{ $kavling['blok'] ? $kavling['blok'].' · ' : '' }}{{ $kavling['label'] ?? $kavling['nomor_kavling'] }}</span> berstatus {{ strtolower($kavling['status_label']) }}.
                 @elseif ($lead)
                     Anda terdaftar untuk {{ $lead['perumahan']['nama_perumahan'] ?? 'perumahan kami' }}.
                 @endif

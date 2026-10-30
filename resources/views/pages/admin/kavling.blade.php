@@ -92,7 +92,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ route('admin.kavling.store') }}" class="{{ $errors->any() ? '' : 'hidden' }} bg-white rounded-[32px] border border-border-subtle shadow-sm p-6 grid grid-cols-1 md:grid-cols-5 gap-3 items-end" data-create-form>
+    <form method="POST" action="{{ route('admin.kavling.store') }}" class="{{ $errors->any() ? '' : 'hidden' }} bg-white rounded-[32px] border border-border-subtle shadow-sm p-6 grid grid-cols-1 md:grid-cols-6 gap-3 items-end" data-create-form>
         @csrf
         <div class="md:col-span-2 space-y-1">
             <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Perumahan / Tipe</label>
@@ -110,7 +110,12 @@
             <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Nomor</label>
             <input name="nomor_kavling" value="{{ old('nomor_kavling') }}" required placeholder="A-07" class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none" />
         </div>
+        <div class="space-y-1">
+            <label for="jumlah-rumah" class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Jumlah Rumah</label>
+            <input id="jumlah-rumah" name="jumlah_rumah" type="number" min="1" max="20" value="{{ old('jumlah_rumah', 1) }}" class="w-full bg-surface-soft rounded-xl p-3 text-sm font-bold outline-none" />
+        </div>
         <button type="submit" class="btn-primary">Tambah</button>
+        <p class="md:col-span-6 text-[10px] text-primary/40 px-2">Satu kavling bisa berisi lebih dari satu rumah. Isi jumlah rumah untuk membuat beberapa rumah sekaligus (Rumah 1, 2, 3...); tiap rumah punya status dan pembeli sendiri. Mengisi kavling yang sudah ada menambah rumah baru.</p>
     </form>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -289,20 +294,52 @@
                 grid.innerHTML = '<p class="col-span-full text-center text-primary/40 py-10">Tidak ada unit yang cocok.</p>';
             }
 
+            // One card per kavling; a kavling with several houses lists them.
+            var groups = {};
+            var order = [];
             items.forEach(function (k) {
+                if (!groups[k.code]) { groups[k.code] = []; order.push(k.code); }
+                groups[k.code].push(k);
+            });
+
+            order.forEach(function (code) {
+                var houses = groups[code];
                 var card = document.createElement('div');
-                card.className = 'aspect-square rounded-3xl p-4 flex flex-col justify-between cursor-pointer transition-all hover:-translate-y-1 ' + statusStyle(k.status);
-                card.setAttribute('data-unit', k.code);
-                card.innerHTML =
-                    '<div class="flex justify-between items-start">' +
-                        '<span class="text-lg font-black">' + esc(k.code) + '</span>' +
-                        '<i data-lucide="more-vertical" class="size-3.5"></i>' +
-                    '</div>' +
-                    '<div>' +
-                        '<p class="text-[9px] font-black uppercase tracking-widest mb-1 ' + (k.status === 'tersedia' ? 'text-primary/20' : 'text-white/60') + '">' + esc(k.type) + '</p>' +
-                        '<p class="text-[10px] font-bold truncate">' + esc(k.customer || 'TERSEDIA') + '</p>' +
-                    '</div>';
-                card.addEventListener('click', function () { openOverlay(k); });
+                card.setAttribute('data-unit', code);
+
+                if (houses.length === 1) {
+                    var k = houses[0];
+                    card.className = 'aspect-square rounded-3xl p-4 flex flex-col justify-between cursor-pointer transition-all hover:-translate-y-1 ' + statusStyle(k.status);
+                    card.innerHTML =
+                        '<div class="flex justify-between items-start">' +
+                            '<span class="text-lg font-black">' + esc(k.code) + '</span>' +
+                            '<i data-lucide="more-vertical" class="size-3.5"></i>' +
+                        '</div>' +
+                        '<div>' +
+                            '<p class="text-[9px] font-black uppercase tracking-widest mb-1 ' + (k.status === 'tersedia' ? 'text-primary/20' : 'text-white/60') + '">' + esc(k.type) + (k.house ? ' · Rumah ' + esc(k.house) : '') + '</p>' +
+                            '<p class="text-[10px] font-bold truncate">' + esc(k.customer || 'TERSEDIA') + '</p>' +
+                        '</div>';
+                    card.addEventListener('click', function () { openOverlay(k); });
+                } else {
+                    card.className = 'col-span-2 rounded-3xl p-4 bg-white border-2 border-border-subtle space-y-2';
+                    card.setAttribute('data-multi-house', houses.length);
+                    var head = document.createElement('div');
+                    head.className = 'flex justify-between items-center';
+                    head.innerHTML = '<span class="text-lg font-black text-primary">' + esc(code) + '</span>' +
+                        '<span class="text-[9px] font-black uppercase tracking-widest text-primary/40">' + houses.length + ' rumah</span>';
+                    card.appendChild(head);
+                    houses.forEach(function (k) {
+                        var row = document.createElement('button');
+                        row.type = 'button';
+                        row.className = 'w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left text-[10px] font-bold transition-all hover:-translate-y-0.5 ' + statusStyle(k.status);
+                        row.setAttribute('data-house', k.house || '');
+                        row.innerHTML = '<span>Rumah ' + esc(k.house || '-') + ' · ' + esc(k.type) + '</span>' +
+                            '<span class="truncate max-w-[45%]">' + esc(k.customer || k.status_label) + '</span>';
+                        row.addEventListener('click', function () { openOverlay(k); });
+                        card.appendChild(row);
+                    });
+                }
+
                 grid.appendChild(card);
             });
 
@@ -349,7 +386,7 @@
 
         function openOverlay(k) {
             modalHeader.className = 'p-8 text-white ' + (k.status === 'terjual' ? 'bg-emerald-custom' : k.status === 'booking' ? 'bg-accent' : 'bg-primary');
-            root.querySelector('[data-kavling-modal-id]').textContent = k.code;
+            root.querySelector('[data-kavling-modal-id]').textContent = k.label || k.code;
             root.querySelector('[data-kavling-modal-type]').textContent = k.type;
             root.querySelector('[data-kavling-modal-price]').textContent = k.price;
             root.querySelector('[data-kavling-modal-dot]').className = 'w-3 h-3 rounded-full ' + (k.status === 'terjual' ? 'bg-emerald-500' : k.status === 'booking' ? 'bg-accent' : 'bg-slate-300');

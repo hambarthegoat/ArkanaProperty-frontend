@@ -26,7 +26,7 @@ class DashboardController extends Controller
             'priority_label' => $lead['prioritas_label'] ?? 'Belum diatur',
             'notes' => $lead['catatan'],
             'message' => $lead['pesan'],
-            'unit' => $lead['kavling'] ? $lead['kavling']['nomor_kavling'].' ('.$lead['kavling']['status_label'].')' : null,
+            'unit' => $lead['kavling'] ? ($lead['kavling']['label'] ?? $lead['kavling']['nomor_kavling']).' ('.$lead['kavling']['status_label'].')' : null,
             'last_update' => Format::carbon($lead['updated_at'])->diffForHumans(),
         ]);
 

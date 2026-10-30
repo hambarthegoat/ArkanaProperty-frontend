@@ -24,7 +24,7 @@
                             <label class="text-[10px] font-bold text-primary/40 uppercase tracking-widest px-2">Pilih Konsumen</label>
                             <select name="id_lead" class="w-full bg-surface-soft border-none rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-accent">
                                 @foreach ($leads as $lead)
-                                    <option value="{{ $lead['id'] }}" @selected((int) old('id_lead') === $lead['id'])>{{ $lead['nama_calon'] }}{{ $lead['kavling'] ? ' ('.$lead['kavling']['nomor_kavling'].')' : '' }}</option>
+                                    <option value="{{ $lead['id'] }}" @selected((int) old('id_lead') === $lead['id'])>{{ $lead['nama_calon'] }}{{ $lead['kavling'] ? ' ('.($lead['kavling']['label'] ?? $lead['kavling']['nomor_kavling']).')' : '' }}</option>
                                 @endforeach
                                 <option value="">Lead Baru / Walk-in</option>
                             </select>
