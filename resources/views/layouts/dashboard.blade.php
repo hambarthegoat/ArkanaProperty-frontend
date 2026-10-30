@@ -8,6 +8,7 @@
             ['path' => route('admin.perumahan'), 'active' => request()->routeIs('admin.perumahan'), 'icon' => 'home', 'label' => 'Kelola Perumahan'],
             ['path' => route('admin.kavling'), 'active' => request()->routeIs('admin.kavling'), 'icon' => 'clipboard-list', 'label' => 'Kelola Kavling'],
             ['path' => route('admin.leads'), 'active' => request()->routeIs('admin.leads'), 'icon' => 'users', 'label' => 'Data Leads'],
+            ['path' => route('admin.marketing'), 'active' => request()->routeIs('admin.marketing*'), 'icon' => 'user-plus', 'label' => 'Kelola Marketing'],
             ['path' => route('admin.reports'), 'active' => request()->routeIs('admin.reports'), 'icon' => 'file-text', 'label' => 'Report Marketing'],
         ],
         'marketing' => [

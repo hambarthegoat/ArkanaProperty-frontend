@@ -199,6 +199,132 @@ class AdminPagesTest extends TestCase
         Http::assertSent(fn (Request $r) => $r['is_valid'] === true && ! isset($r['id_marketing']));
     }
 
+    public function test_create_perumahan_without_house_type_sends_no_type(): void
+    {
+        Http::fake(['api.test/api/admin/perumahan' => self::api(['id' => 2, 'nama_perumahan' => 'Griya Baru'], 201)]);
+
+        // The form always submits the jenis_rumah select, even when no type was typed.
+        $this->loginAs('admin')
+            ->post('/admin/perumahan', ['nama_perumahan' => 'Griya Baru', 'lokasi' => 'Kademangan', 'status' => 'aktif', 'tipe' => ['nama_tipe' => '', 'jenis_rumah' => 'subsidi', 'harga' => '', 'dp' => '']])
+            ->assertRedirect(route('admin.perumahan'))
+            ->assertSessionHas('success');
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'POST' && $r->isMultipart()
+            && collect($r->data())->contains(fn ($p) => $p['name'] === 'nama_perumahan' && $p['contents'] === 'Griya Baru')
+            && ! collect($r->data())->contains(fn ($p) => str_starts_with($p['name'], 'tipe_rumah')));
+    }
+
+    public function test_perumahan_page_has_edit_and_delete_controls(): void
+    {
+        Http::fake(['api.test/api/admin/perumahan' => self::api(self::perumahan())]);
+
+        $this->loginAs('admin')->get('/admin/perumahan')
+            ->assertOk()
+            ->assertSee('data-edit-project', false)
+            ->assertSee('data-edit-form', false)
+            ->assertSee('name="_method" value="DELETE"', false)
+            ->assertSee(route('admin.perumahan.destroy', 1), false);
+    }
+
+    public function test_update_perumahan_sends_multipart_put_override(): void
+    {
+        Http::fake(['api.test/api/admin/perumahan/1' => self::api(['id' => 1, 'nama_perumahan' => 'Arkana Baru'])]);
+
+        $this->loginAs('admin')
+            ->put('/admin/perumahan/1', ['nama_perumahan' => 'Arkana Baru', 'lokasi' => 'Kec. Baru', 'status' => 'pre_launch', 'deskripsi' => '', 'gambar' => UploadedFile::fake()->image('foto.jpg')])
+            ->assertRedirect(route('admin.perumahan'))
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'Arkana Baru'));
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'POST' && $r->isMultipart()
+            && str_contains($r->url(), 'admin/perumahan/1')
+            && collect($r->data())->contains(fn ($p) => $p['name'] === '_method' && $p['contents'] === 'PUT')
+            && collect($r->data())->contains(fn ($p) => $p['name'] === 'status' && $p['contents'] === 'pre_launch')
+            && collect($r->data())->contains(fn ($p) => $p['name'] === 'gambar'));
+    }
+
+    public function test_update_perumahan_shows_api_validation_errors(): void
+    {
+        Http::fake(['api.test/api/admin/perumahan/1' => self::api(['status' => ['The selected status is invalid.']], 422, 'Validation failed')]);
+
+        $this->loginAs('admin')->from('/admin/perumahan')
+            ->put('/admin/perumahan/1', ['nama_perumahan' => 'X', 'lokasi' => 'Y', 'status' => 'salah'])
+            ->assertRedirect('/admin/perumahan')
+            ->assertSessionHasErrors('status');
+    }
+
+    public function test_delete_perumahan_calls_api_delete(): void
+    {
+        Http::fake(['api.test/api/admin/perumahan/1' => self::api(null)]);
+
+        $this->loginAs('admin')->delete('/admin/perumahan/1')
+            ->assertRedirect(route('admin.perumahan'))
+            ->assertSessionHas('success');
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'DELETE' && str_contains($r->url(), 'admin/perumahan/1'));
+    }
+
+    public function test_delete_perumahan_shows_the_api_refusal(): void
+    {
+        Http::fake(['api.test/api/admin/perumahan/1' => self::api(null, 422, 'Perumahan ini memiliki 2 lead sehingga tidak bisa dihapus.')]);
+
+        $this->loginAs('admin')->from('/admin/perumahan')->delete('/admin/perumahan/1')
+            ->assertRedirect('/admin/perumahan')
+            ->assertSessionHasErrors(['api' => 'Perumahan ini memiliki 2 lead sehingga tidak bisa dihapus.'])
+            ->assertSessionMissing('success');
+    }
+
+    public function test_marketing_accounts_page_lists_accounts_and_has_create_form(): void
+    {
+        Http::fake(['api.test/api/admin/marketing' => self::api([['id' => 2, 'username' => 'dimas', 'nama' => 'Dimas Marketing', 'no_telp' => '081211112222']])]);
+
+        $this->loginAs('admin')->get('/admin/marketing')
+            ->assertOk()
+            ->assertSee('Dimas Marketing')
+            ->assertSee('081211112222')
+            ->assertSee(route('admin.marketing.store'), false)
+            ->assertSee('name="password"', false)
+            ->assertSee('Kelola Marketing');
+    }
+
+    public function test_create_marketing_account_posts_to_api(): void
+    {
+        Http::fake(['api.test/api/admin/marketing' => self::api(['id' => 7, 'username' => 'rina', 'role' => 'marketing'], 201)]);
+
+        $this->loginAs('admin')->from('/admin/marketing')
+            ->post('/admin/marketing', ['username' => 'rina', 'password' => 'rahasia123', 'nama' => 'Rina', 'no_telp' => '081299990001'])
+            ->assertRedirect(route('admin.marketing'))
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'rina'));
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'POST' && str_contains($r->url(), 'admin/marketing')
+            && $r['username'] === 'rina' && $r['password'] === 'rahasia123' && $r['nama'] === 'Rina');
+    }
+
+    public function test_create_marketing_account_validates_locally_and_shows_api_errors(): void
+    {
+        Http::fake(['api.test/api/admin/marketing' => self::api(['username' => ['The username has already been taken.']], 422, 'Validation failed')]);
+
+        $this->loginAs('admin')->from('/admin/marketing')
+            ->post('/admin/marketing', ['username' => 'rina', 'password' => '123'])
+            ->assertRedirect('/admin/marketing')
+            ->assertSessionHasErrors('password');
+        Http::assertNothingSent();
+
+        $this->loginAs('admin')->from('/admin/marketing')
+            ->post('/admin/marketing', ['username' => 'dimas', 'password' => 'rahasia123'])
+            ->assertSessionHasErrors(['username' => 'The username has already been taken.'])
+            ->assertSessionHasInput('username', 'dimas');
+    }
+
+    public function test_marketing_accounts_page_is_admin_only(): void
+    {
+        Http::fake();
+
+        $this->loginAs('marketing')->get('/admin/marketing')->assertRedirect(route('marketing.dashboard'));
+        $this->loginAs('marketing')->post('/admin/marketing', ['username' => 'x', 'password' => 'rahasia123'])->assertRedirect(route('marketing.dashboard'));
+
+        Http::assertNothingSent();
+    }
+
     public function test_kavling_page_and_status_update(): void
     {
         Http::fake([
