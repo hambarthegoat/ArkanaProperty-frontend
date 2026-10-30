@@ -38,9 +38,20 @@ class KavlingController extends Controller
             'id_leads' => $k['leads']['id'] ?? null,
         ])->values();
 
-        $blocks = $projects->mapWithKeys(fn ($p) => [
-            $p['id'] => $units->where('project', $p['id'])->pluck('block')->unique()->sort()->values(),
+        // Blocks come from the API (so empty ones show up) plus any block
+        // name still carried only by houses.
+        $blockMeta = collect($perumahan)->mapWithKeys(fn ($p) => [
+            $p['id'] => collect($p['blok'] ?? [])->mapWithKeys(fn ($b) => [
+                $b['nama'] => ['id' => $b['id'], 'count' => $b['jumlah_rumah'] ?? 0],
+            ]),
         ]);
+
+        $blocks = $projects->mapWithKeys(fn ($p) => [
+            $p['id'] => $units->where('project', $p['id'])->pluck('block')
+                ->merge($blockMeta[$p['id']]->keys())->unique()->sort()->values(),
+        ]);
+
+        $blockOptions = $blockMeta->map(fn ($meta) => $meta->keys()->sort()->values());
 
         $houseTypes = collect($perumahan)->mapWithKeys(fn ($p) => [
             $p['id'] => collect($p['tipe_rumah'])->pluck('nama_tipe')->values(),
@@ -48,19 +59,25 @@ class KavlingController extends Controller
 
         $tipeOptions = collect($perumahan)->flatMap(fn ($p) => collect($p['tipe_rumah'])->map(fn ($t) => [
             'id' => $t['id'],
+            'project' => $p['id'],
             'label' => $p['nama_perumahan'].' — '.$t['nama_tipe'],
         ]))->values();
 
         $counts = $units->countBy('status');
 
+        $initialProject = (int) $request->query('perumahan', $projects->first()['id'] ?? 0);
+
         return view('pages.admin.kavling', [
             'projects' => $projects,
             'blocks' => $blocks,
+            'blockMeta' => $blockMeta,
+            'blockOptions' => $blockOptions,
             'houseTypes' => $houseTypes,
             'kavlingData' => $units,
             'tipeOptions' => $tipeOptions,
+            'defaultTipe' => $tipeOptions->firstWhere('project', $initialProject)['id'] ?? null,
             'buyers' => collect($buyers)->map(fn ($l) => ['id' => $l['id'], 'nama' => $l['nama_calon']])->values(),
-            'initialProject' => (int) $request->query('perumahan', $projects->first()['id'] ?? 0),
+            'initialProject' => $initialProject,
             'statusTiles' => [
                 ['value' => 'all', 'label' => 'Semua', 'count' => $units->count(), 'color' => 'bg-slate-200'],
                 ['value' => 'tersedia', 'label' => 'Tersedia', 'count' => $counts['tersedia'] ?? 0, 'color' => 'bg-white border border-border-subtle'],
@@ -68,6 +85,33 @@ class KavlingController extends Controller
                 ['value' => 'terjual', 'label' => 'Terjual', 'count' => $counts['terjual'] ?? 0, 'color' => 'bg-emerald-custom'],
             ],
         ]);
+    }
+
+    /**
+     * Creates an empty block in a project; houses are added to it after.
+     */
+    public function storeBlok(Request $request)
+    {
+        $request->validate([
+            'id_perumahan' => 'required|integer',
+            'nama' => 'required|string|max:50',
+        ]);
+
+        $blok = $this->api->post("admin/perumahan/{$request->integer('id_perumahan')}/blok", ['nama' => $request->input('nama')]);
+
+        return redirect()->route('admin.kavling', ['perumahan' => $blok['id_perumahan']])
+            ->with('success', "{$blok['nama']} berhasil dibuat. Tambahkan rumah ke blok ini.");
+    }
+
+    /**
+     * Only empty blocks can be removed; the API refuses the rest.
+     */
+    public function destroyBlok(Request $request, int $id)
+    {
+        $this->api->delete("admin/blok/{$id}");
+
+        return redirect()->route('admin.kavling', array_filter(['perumahan' => $request->input('perumahan')]))
+            ->with('success', 'Blok berhasil dihapus.');
     }
 
     public function store(Request $request)

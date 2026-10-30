@@ -435,6 +435,128 @@ class AdminPagesTest extends TestCase
             ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'B-03 · Rumah 2'));
     }
 
+    private static function perumahanWithBlocks(): array
+    {
+        $p = self::perumahan();
+        $p[0]['blok'] = [
+            ['id' => 5, 'id_perumahan' => 1, 'nama' => 'Blok A', 'jumlah_rumah' => 2],
+            ['id' => 6, 'id_perumahan' => 1, 'nama' => 'Blok Kosong', 'jumlah_rumah' => 0],
+        ];
+
+        return $p;
+    }
+
+    public function test_kavling_page_lists_empty_blocks_and_block_forms(): void
+    {
+        Http::fake([
+            'api.test/api/admin/perumahan' => self::api(self::perumahanWithBlocks()),
+            'api.test/api/admin/kavling' => self::api(self::kavling()),
+            'api.test/api/admin/leads*' => self::api([]),
+        ]);
+
+        $this->loginAs('admin')->get('/admin/kavling')
+            ->assertOk()
+            ->assertSee('Buat Blok')
+            ->assertSee('Tambah Rumah')
+            ->assertSee(route('admin.blok.store'), false)
+            ->assertSee('data-delete-block-form', false)
+            ->assertSee('name="blok"', false)
+            ->assertSee('data-project="1"', false)
+            // the empty block appears in the block list data with its id and count 0
+            ->assertSee('Blok Kosong', false)
+            ->assertSee('"id":6,"count":0', false);
+    }
+
+    public function test_add_house_form_defaults_to_the_project_being_viewed(): void
+    {
+        $second = self::perumahan();
+        $second[0]['id'] = 2;
+        $second[0]['nama_perumahan'] = 'Griya Kedua';
+        $second[0]['tipe_rumah'][0]['id'] = 9;
+        $second[0]['blok'] = [['id' => 8, 'id_perumahan' => 2, 'nama' => 'Blok Z', 'jumlah_rumah' => 0]];
+
+        Http::fake([
+            'api.test/api/admin/perumahan' => self::api(array_merge(self::perumahanWithBlocks(), $second)),
+            'api.test/api/admin/kavling' => self::api(self::kavling()),
+            'api.test/api/admin/leads*' => self::api([]),
+        ]);
+
+        $this->loginAs('admin')->get('/admin/kavling?perumahan=2')
+            ->assertOk()
+            ->assertSee('<option value="9" data-project="2" selected>', false)
+            ->assertDontSee('<option value="1" data-project="1" selected>', false);
+
+        $this->loginAs('admin')->get('/admin/kavling')
+            ->assertSee('<option value="1" data-project="1" selected>', false);
+    }
+
+    public function test_kavling_page_works_when_the_api_sends_no_blocks(): void
+    {
+        Http::fake([
+            'api.test/api/admin/perumahan' => self::api(self::perumahan()),
+            'api.test/api/admin/kavling' => self::api(self::kavling()),
+            'api.test/api/admin/leads*' => self::api([]),
+        ]);
+
+        $this->loginAs('admin')->get('/admin/kavling')->assertOk()->assertSee('Buat Blok');
+    }
+
+    public function test_create_block_posts_to_the_api(): void
+    {
+        Http::fake(['api.test/api/admin/perumahan/1/blok' => self::api(['id' => 7, 'id_perumahan' => 1, 'nama' => 'Blok C'], 201)]);
+
+        $this->loginAs('admin')->from('/admin/kavling')
+            ->post('/admin/blok', ['id_perumahan' => 1, 'nama' => 'Blok C'])
+            ->assertRedirect(route('admin.kavling', ['perumahan' => 1]))
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'Blok C berhasil dibuat'));
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'POST' && str_contains($r->url(), 'admin/perumahan/1/blok') && $r['nama'] === 'Blok C');
+    }
+
+    public function test_create_block_validates_locally_and_shows_api_errors(): void
+    {
+        Http::fake(['api.test/api/admin/perumahan/1/blok' => self::api(['nama' => ['The nama has already been taken.']], 422, 'Validation failed')]);
+
+        $this->loginAs('admin')->from('/admin/kavling')
+            ->post('/admin/blok', ['id_perumahan' => 1, 'nama' => ''])
+            ->assertSessionHasErrors('nama');
+        Http::assertNothingSent();
+
+        $this->loginAs('admin')->from('/admin/kavling')
+            ->post('/admin/blok', ['id_perumahan' => 1, 'nama' => 'Blok A'])
+            ->assertSessionHasErrors(['nama' => 'The nama has already been taken.']);
+    }
+
+    public function test_delete_block_calls_the_api_and_returns_to_the_project(): void
+    {
+        Http::fake(['api.test/api/admin/blok/6' => self::api(null)]);
+
+        $this->loginAs('admin')->delete('/admin/blok/6', ['perumahan' => 1])
+            ->assertRedirect(route('admin.kavling', ['perumahan' => 1]))
+            ->assertSessionHas('success');
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'DELETE' && str_contains($r->url(), 'admin/blok/6'));
+    }
+
+    public function test_delete_block_shows_the_api_refusal(): void
+    {
+        Http::fake(['api.test/api/admin/blok/5' => self::api(null, 422, 'Blok A masih berisi 2 rumah sehingga tidak bisa dihapus.')]);
+
+        $this->loginAs('admin')->from('/admin/kavling')->delete('/admin/blok/5')
+            ->assertRedirect('/admin/kavling')
+            ->assertSessionHasErrors(['api' => 'Blok A masih berisi 2 rumah sehingga tidak bisa dihapus.']);
+    }
+
+    public function test_block_routes_are_admin_only(): void
+    {
+        Http::fake();
+
+        $this->loginAs('marketing')->post('/admin/blok', ['id_perumahan' => 1, 'nama' => 'X'])->assertRedirect(route('marketing.dashboard'));
+        $this->loginAs('marketing')->delete('/admin/blok/5')->assertRedirect(route('marketing.dashboard'));
+
+        Http::assertNothingSent();
+    }
+
     public function test_perumahan_page_and_create_with_first_type(): void
     {
         Http::fake([
