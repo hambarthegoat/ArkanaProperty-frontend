@@ -66,6 +66,34 @@
         </div>
     </form>
 
+    {{-- Edit modal --}}
+    <div class="fixed inset-0 z-[100] items-center justify-center p-4 hidden" data-edit-modal>
+        <div class="absolute inset-0 bg-primary/40 backdrop-blur-md" data-edit-backdrop></div>
+        <form method="POST" action="#" enctype="multipart/form-data" class="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl p-8 space-y-5" data-edit-form>
+            @csrf
+            @method('PUT')
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-primary text-lg">Edit Perumahan</h3>
+                <button type="button" class="p-2 bg-surface-soft rounded-full text-primary" data-edit-close aria-label="Tutup"><i data-lucide="x" class="size-4"></i></button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input name="nama_perumahan" required placeholder="Nama perumahan" class="bg-surface-soft rounded-xl p-3 font-semibold outline-none focus:ring-2 focus:ring-accent" data-edit-nama />
+                <input name="lokasi" required placeholder="Lokasi" class="bg-surface-soft rounded-xl p-3 font-semibold outline-none focus:ring-2 focus:ring-accent" data-edit-lokasi />
+                <select name="status" class="bg-surface-soft rounded-xl p-3 font-semibold outline-none" data-edit-status>
+                    <option value="aktif">Aktif</option>
+                    <option value="pre_launch">Pre-Launch</option>
+                </select>
+                <input type="file" name="gambar" accept="image/*" class="bg-surface-soft rounded-xl p-2 text-sm" />
+                <textarea name="deskripsi" placeholder="Deskripsi singkat" class="md:col-span-2 bg-surface-soft rounded-xl p-3 outline-none min-h-[80px]" data-edit-deskripsi></textarea>
+            </div>
+            <p class="text-[10px] text-primary/40">Kosongkan gambar bila tidak ingin menggantinya.</p>
+            <div class="flex justify-end gap-3">
+                <button type="button" class="btn-gold-outline" data-edit-close>Batal</button>
+                <button type="submit" class="btn-primary">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" data-project-list>
         @forelse ($projects as $project)
             <div class="bg-white rounded-[32px] overflow-hidden border border-border-subtle shadow-sm flex flex-col h-full hover:-translate-y-1 transition-transform">
@@ -115,9 +143,21 @@
                                 {{ $project['unit']['total'] ? round(($project['unit']['terjual'] + $project['unit']['booking']) / $project['unit']['total'] * 100) : 0 }}% terjual/booking
                             </span>
                         </div>
-                        <a href="{{ route('admin.kavling', ['perumahan' => $project['id']]) }}" class="p-2 hover:bg-surface-soft rounded-xl transition-colors" title="Lihat kavling">
-                            <i data-lucide="arrow-right" class="size-[18px] text-primary/40"></i>
-                        </a>
+                        <div class="flex items-center gap-1">
+                            <button type="button" class="p-2 hover:bg-surface-soft rounded-xl transition-colors" title="Edit perumahan" data-edit-project="{{ json_encode(['id' => $project['id'], 'nama' => $project['nama_perumahan'], 'lokasi' => $project['lokasi'], 'deskripsi' => $project['deskripsi'] ?? '', 'status' => $project['status']]) }}">
+                                <i data-lucide="pencil" class="size-[18px] text-primary/40"></i>
+                            </button>
+                            <form method="POST" action="{{ route('admin.perumahan.destroy', $project['id']) }}" onsubmit="return confirm('Hapus perumahan {{ e($project['nama_perumahan']) }} beserta tipe rumah dan kavlingnya?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="p-2 hover:bg-red-50 rounded-xl transition-colors" title="Hapus perumahan">
+                                    <i data-lucide="trash-2" class="size-[18px] text-red-400"></i>
+                                </button>
+                            </form>
+                            <a href="{{ route('admin.kavling', ['perumahan' => $project['id']]) }}" class="p-2 hover:bg-surface-soft rounded-xl transition-colors" title="Lihat kavling">
+                                <i data-lucide="arrow-right" class="size-[18px] text-primary/40"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -135,6 +175,25 @@
         root.querySelectorAll('[data-toggle-create]').forEach(function (btn) {
             btn.addEventListener('click', function () { form.classList.toggle('hidden'); });
         });
+
+        var modal = root.querySelector('[data-edit-modal]');
+        var editForm = root.querySelector('[data-edit-form]');
+        var updateBase = @json(url('admin/perumahan'));
+        function closeEdit() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        root.querySelectorAll('[data-edit-project]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var p = JSON.parse(btn.getAttribute('data-edit-project'));
+                editForm.action = updateBase + '/' + p.id;
+                editForm.reset();
+                editForm.querySelector('[data-edit-nama]').value = p.nama;
+                editForm.querySelector('[data-edit-lokasi]').value = p.lokasi;
+                editForm.querySelector('[data-edit-status]').value = p.status;
+                editForm.querySelector('[data-edit-deskripsi]').value = p.deskripsi || '';
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            });
+        });
+        root.querySelectorAll('[data-edit-close], [data-edit-backdrop]').forEach(function (el) { el.addEventListener('click', closeEdit); });
 
         var list = root.querySelector('[data-project-list]');
         var buttons = Array.prototype.slice.call(root.querySelectorAll('[data-view-toggle] button'));
