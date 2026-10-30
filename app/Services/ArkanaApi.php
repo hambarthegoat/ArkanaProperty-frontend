@@ -46,6 +46,11 @@ class ArkanaApi
         return $this->send(fn (PendingRequest $http) => $http->patch($uri, $data));
     }
 
+    public function delete(string $uri): mixed
+    {
+        return $this->send(fn (PendingRequest $http) => $http->delete($uri));
+    }
+
     /**
      * Multipart POST; UploadedFile values are sent as file parts, nested
      * arrays are flattened to "key[0][field]" names and nulls are skipped.

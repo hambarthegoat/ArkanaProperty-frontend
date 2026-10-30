@@ -32,6 +32,11 @@ Route::prefix('admin')->name('admin.')->middleware('api.role:admin')->group(func
 
     Route::get('/perumahan', [Admin\PerumahanController::class, 'index'])->name('perumahan');
     Route::post('/perumahan', [Admin\PerumahanController::class, 'store'])->name('perumahan.store');
+    Route::put('/perumahan/{id}', [Admin\PerumahanController::class, 'update'])->name('perumahan.update');
+    Route::delete('/perumahan/{id}', [Admin\PerumahanController::class, 'destroy'])->name('perumahan.destroy');
+
+    Route::get('/marketing', [Admin\MarketingController::class, 'index'])->name('marketing');
+    Route::post('/marketing', [Admin\MarketingController::class, 'store'])->name('marketing.store');
 
     Route::get('/reports', [Admin\ReportController::class, 'index'])->name('reports');
     Route::get('/reports/export', [Admin\ReportController::class, 'export'])->name('reports.export');
