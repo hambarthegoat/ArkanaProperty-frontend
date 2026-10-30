@@ -29,6 +29,8 @@ Route::prefix('admin')->name('admin.')->middleware('api.role:admin')->group(func
     Route::get('/kavling', [Admin\KavlingController::class, 'index'])->name('kavling');
     Route::post('/kavling', [Admin\KavlingController::class, 'store'])->name('kavling.store');
     Route::put('/kavling/{id}', [Admin\KavlingController::class, 'update'])->name('kavling.update');
+    Route::post('/blok', [Admin\KavlingController::class, 'storeBlok'])->name('blok.store');
+    Route::delete('/blok/{id}', [Admin\KavlingController::class, 'destroyBlok'])->name('blok.destroy');
 
     Route::get('/perumahan', [Admin\PerumahanController::class, 'index'])->name('perumahan');
     Route::post('/perumahan', [Admin\PerumahanController::class, 'store'])->name('perumahan.store');
