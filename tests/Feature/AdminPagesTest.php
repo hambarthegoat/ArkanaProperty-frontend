@@ -347,6 +347,94 @@ class AdminPagesTest extends TestCase
         Http::assertSent(fn (Request $r) => $r->method() === 'PUT' && $r['status'] === 'booking' && $r['id_leads'] === 3);
     }
 
+    private static function multiHouseKavling(): array
+    {
+        $tipe = ['id' => 1, 'nama_tipe' => 'Tipe 36/60', 'harga' => 162000000, 'perumahan' => ['id' => 1, 'nama_perumahan' => 'Arkana Residence']];
+
+        return [
+            ['id' => 20, 'blok' => 'Blok B', 'nomor_kavling' => 'B-03', 'nomor_rumah' => '1', 'label' => 'B-03 · Rumah 1', 'status' => 'tersedia', 'status_label' => 'Tersedia', 'leads' => null, 'tipe_rumah' => $tipe],
+            ['id' => 21, 'blok' => 'Blok B', 'nomor_kavling' => 'B-03', 'nomor_rumah' => '2', 'label' => 'B-03 · Rumah 2', 'status' => 'booking', 'status_label' => 'Booking', 'leads' => ['id' => 3, 'nama_calon' => 'Budi Santoso'], 'tipe_rumah' => $tipe],
+        ];
+    }
+
+    public function test_kavling_page_passes_each_house_with_number_and_label(): void
+    {
+        Http::fake([
+            'api.test/api/admin/perumahan' => self::api(self::perumahan()),
+            'api.test/api/admin/kavling' => self::api(array_merge(self::kavling(), self::multiHouseKavling())),
+            'api.test/api/admin/leads*' => self::api([]),
+        ]);
+
+        $this->loginAs('admin')->get('/admin/kavling')
+            ->assertOk()
+            ->assertSee('"house":"2"', false)
+            ->assertSee('"label":"B-03 \\u00b7 Rumah 2"', false)
+            ->assertSee('"code":"B-03"', false)
+            ->assertSee('data-multi-house', false)
+            ->assertSee('name="jumlah_rumah"', false)
+            ->assertSee('Jumlah Rumah');
+    }
+
+    public function test_kavling_page_still_works_for_single_house_data_without_new_fields(): void
+    {
+        Http::fake([
+            'api.test/api/admin/perumahan' => self::api(self::perumahan()),
+            'api.test/api/admin/kavling' => self::api(self::kavling()),
+            'api.test/api/admin/leads*' => self::api([]),
+        ]);
+
+        $this->loginAs('admin')->get('/admin/kavling')
+            ->assertOk()
+            ->assertSee('"house":null', false)
+            ->assertSee('"label":"A-01"', false);
+    }
+
+    public function test_create_kavling_with_several_houses_sends_jumlah_rumah(): void
+    {
+        $created = self::kavling()[0] + ['nomor_rumah' => '1', 'label' => 'A-01 · Rumah 1', 'jumlah_dibuat' => 3];
+        Http::fake(['api.test/api/admin/tipe-rumah/1/kavling' => self::api($created, 201)]);
+
+        $this->loginAs('admin')->from('/admin/kavling')
+            ->post('/admin/kavling', ['id_tipe' => 1, 'blok' => 'Blok A', 'nomor_kavling' => 'A-01', 'jumlah_rumah' => 3])
+            ->assertRedirect(route('admin.kavling', ['perumahan' => 1]))
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, '3 rumah berhasil ditambahkan pada kavling A-01'));
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'POST' && str_contains($r->url(), 'tipe-rumah/1/kavling')
+            && $r['nomor_kavling'] === 'A-01' && $r['jumlah_rumah'] === 3);
+    }
+
+    public function test_create_single_kavling_keeps_the_old_message_and_omits_the_count_when_empty(): void
+    {
+        Http::fake(['api.test/api/admin/tipe-rumah/1/kavling' => self::api(self::kavling()[0] + ['jumlah_dibuat' => 1], 201)]);
+
+        $this->loginAs('admin')->from('/admin/kavling')
+            ->post('/admin/kavling', ['id_tipe' => 1, 'blok' => 'Blok A', 'nomor_kavling' => 'A-01', 'jumlah_rumah' => ''])
+            ->assertSessionHas('success', 'Kavling A-01 berhasil ditambahkan.');
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'POST' && ! isset($r['jumlah_rumah']));
+    }
+
+    public function test_create_kavling_validates_house_count_locally(): void
+    {
+        Http::fake();
+
+        $this->loginAs('admin')->from('/admin/kavling')
+            ->post('/admin/kavling', ['id_tipe' => 1, 'nomor_kavling' => 'A-01', 'jumlah_rumah' => 99])
+            ->assertRedirect('/admin/kavling')
+            ->assertSessionHasErrors('jumlah_rumah');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_updating_one_house_names_it_in_the_message(): void
+    {
+        Http::fake(['api.test/api/admin/kavling/21' => self::api(self::multiHouseKavling()[1])]);
+
+        $this->loginAs('admin')->from('/admin/kavling')
+            ->put('/admin/kavling/21', ['status' => 'booking', 'id_leads' => 3])
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'B-03 · Rumah 2'));
+    }
+
     public function test_perumahan_page_and_create_with_first_type(): void
     {
         Http::fake([

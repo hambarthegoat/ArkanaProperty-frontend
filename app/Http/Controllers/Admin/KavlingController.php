@@ -26,6 +26,8 @@ class KavlingController extends Controller
         $units = collect($kavling)->map(fn ($k) => [
             'id' => $k['id'],
             'code' => $k['nomor_kavling'],
+            'house' => $k['nomor_rumah'] ?? null,
+            'label' => $k['label'] ?? $k['nomor_kavling'],
             'project' => $k['tipe_rumah']['perumahan']['id'],
             'block' => $k['blok'] ?: 'Tanpa Blok',
             'type' => $k['tipe_rumah']['nama_tipe'],
@@ -72,10 +74,21 @@ class KavlingController extends Controller
     {
         $request->validate(['id_tipe' => 'required|integer']);
 
-        $kavling = $this->api->post("admin/tipe-rumah/{$request->integer('id_tipe')}/kavling", $request->only(['blok', 'nomor_kavling', 'status']));
+        $request->validate(['jumlah_rumah' => 'nullable|integer|min:1|max:20']);
+
+        $payload = $request->only(['blok', 'nomor_kavling', 'status']);
+
+        if ($request->filled('jumlah_rumah')) {
+            $payload['jumlah_rumah'] = $request->integer('jumlah_rumah');
+        }
+
+        $kavling = $this->api->post("admin/tipe-rumah/{$request->integer('id_tipe')}/kavling", $payload);
+        $dibuat = $kavling['jumlah_dibuat'] ?? 1;
 
         return redirect()->route('admin.kavling', ['perumahan' => $kavling['tipe_rumah']['perumahan']['id']])
-            ->with('success', "Kavling {$kavling['nomor_kavling']} berhasil ditambahkan.");
+            ->with('success', $dibuat > 1
+                ? "{$dibuat} rumah berhasil ditambahkan pada kavling {$kavling['nomor_kavling']}."
+                : "Kavling {$kavling['nomor_kavling']} berhasil ditambahkan.");
     }
 
     public function update(Request $request, int $id)
@@ -86,6 +99,6 @@ class KavlingController extends Controller
         ]);
 
         return redirect()->route('admin.kavling', ['perumahan' => $kavling['tipe_rumah']['perumahan']['id']])
-            ->with('success', "Status kavling {$kavling['nomor_kavling']} diperbarui menjadi {$kavling['status_label']}.");
+            ->with('success', 'Status kavling '.($kavling['label'] ?? $kavling['nomor_kavling'])." diperbarui menjadi {$kavling['status_label']}.");
     }
 }

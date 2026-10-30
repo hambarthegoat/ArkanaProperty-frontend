@@ -93,7 +93,7 @@
                             <div class="flex flex-wrap gap-3">
                                 @foreach ($units as $unit)
                                     <span class="px-4 py-2 rounded-xl text-xs font-black {{ match ($unit['status']) { 'terjual' => 'bg-emerald-custom text-white', 'booking' => 'bg-accent text-white', default => 'bg-surface-soft text-primary border border-dashed border-border-subtle' } }}" title="{{ $unit['status_label'] }}">
-                                        {{ $unit['nomor_kavling'] }} · {{ $unit['status_label'] }}
+                                        {{ $unit['label'] ?? $unit['nomor_kavling'] }} · {{ $unit['status_label'] }}
                                     </span>
                                 @endforeach
                             </div>
