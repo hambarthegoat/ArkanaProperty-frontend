@@ -27,7 +27,7 @@
         </div>
         @if ($lead)
             <span class="px-4 py-2 bg-white border border-border-subtle rounded-full font-bold text-xs text-primary/60">
-                {{ $lead['perumahan']['nama_perumahan'] ?? '' }}{{ $lead['kavling'] ? ' · '.$lead['kavling']['nomor_kavling'] : '' }}
+                {{ $lead['perumahan']['nama_perumahan'] ?? '' }}{{ $lead['kavling'] ? ' · '.($lead['kavling']['label'] ?? $lead['kavling']['nomor_kavling']) : '' }}
             </span>
         @endif
     </div>

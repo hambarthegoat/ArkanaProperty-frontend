@@ -139,6 +139,22 @@ class PublicPagesTest extends TestCase
             ->assertSee('Hunian subsidi ternyaman.');
     }
 
+    public function test_property_detail_labels_each_house_of_a_shared_kavling(): void
+    {
+        Http::fake(['api.test/api/public/tipe-rumah/1' => self::api(self::tipe([
+            'perumahan' => self::perumahan(),
+            'kavling' => [
+                ['id' => 1, 'blok' => 'Blok B', 'nomor_kavling' => 'B-03', 'nomor_rumah' => '1', 'label' => 'B-03 · Rumah 1', 'status' => 'tersedia', 'status_label' => 'Tersedia'],
+                ['id' => 2, 'blok' => 'Blok B', 'nomor_kavling' => 'B-03', 'nomor_rumah' => '2', 'label' => 'B-03 · Rumah 2', 'status' => 'booking', 'status_label' => 'Booking'],
+            ],
+        ]))]);
+
+        $this->get('/property/1')
+            ->assertOk()
+            ->assertSee('B-03 · Rumah 1 · Tersedia')
+            ->assertSee('B-03 · Rumah 2 · Booking');
+    }
+
     public function test_unknown_property_is_404(): void
     {
         Http::fake(['api.test/api/public/tipe-rumah/99' => self::api(null, 404, 'Tipe rumah not found')]);
